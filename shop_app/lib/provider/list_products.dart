@@ -10,10 +10,10 @@ class Products extends ChangeNotifier {
 
   Future<void> fetchProducts() async {
     isLoading = true;
-    final url = Uri.parse(
+    final _url = Uri.parse(
         'https://imic-firebasedemo-default-rtdb.firebaseio.com/product.json');
     try {
-      final response = await http.get(url);
+      final response = await http.get(_url);
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body) as Map<String, dynamic>?;
         if (responseData != null) {
@@ -40,10 +40,11 @@ class Products extends ChangeNotifier {
   }
 
   Future<void> addProduct(Product product) async {
-    final url = Uri.parse(
+    final _url = Uri.parse(
         'https://imic-firebasedemo-default-rtdb.firebaseio.com/product.json');
     try {
-      final response = await http.post(url, body: jsonEncode(product.toJson()));
+      final response =
+          await http.post(_url, body: jsonEncode(product.toJson()));
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body) as Map<String, dynamic>?;
         if (responseData == null) {
@@ -58,10 +59,10 @@ class Products extends ChangeNotifier {
   }
 
   Future<void> updateProduct(Product product) async {
-    final url = Uri.parse(
+    final _url = Uri.parse(
         'https://imic-firebasedemo-default-rtdb.firebaseio.com/product/${product.id}.json');
     try {
-      final response = await http.put(url, body: jsonEncode(product.toJson()));
+      final response = await http.put(_url, body: jsonEncode(product.toJson()));
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body) as Map<String, dynamic>?;
         if (responseData == null) {
@@ -77,10 +78,10 @@ class Products extends ChangeNotifier {
   }
 
   Future<void> deleteProduct(Product product) async {
-    final url = Uri.parse(
+    final _url = Uri.parse(
         'https://imic-firebasedemo-default-rtdb.firebaseio.com/product/${product.id}.json');
     try {
-      final response = await http.delete(url);
+      final response = await http.delete(_url);
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body) as Map<String, dynamic>?;
         if (responseData == null) {

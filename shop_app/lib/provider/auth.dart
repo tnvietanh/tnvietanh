@@ -16,8 +16,9 @@ class AuthProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final url =
-          'https://www.googleapis.com/identitytoolkit/v3/relyingparty/$urlSegment?key=AIzaSyDVyU_jjujCX5Mn_KVh29_w-eN0ZVCeiSg';
+      const _apiKey = 'AIzaSyDVyU_jjujCX5Mn_KVh29_w-eN0ZVCeiSg';
+      final _url =
+          'https://www.googleapis.com/identitytoolkit/v3/relyingparty/$urlSegment?key=$_apiKey';
       final body = json.encode(
         {
           'email': email,
@@ -25,7 +26,7 @@ class AuthProvider extends ChangeNotifier {
           'returnSecureToken': true,
         },
       );
-      final response = await http.post(Uri.parse(url), body: body);
+      final response = await http.post(Uri.parse(_url), body: body);
       final responseData = json.decode(response.body);
       if (responseData['error'] != null) {
         throw HttpException(responseData['error']['message']);
