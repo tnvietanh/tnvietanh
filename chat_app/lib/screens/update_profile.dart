@@ -28,7 +28,7 @@ class _UpdateProfileState extends State<UpdateProfile> {
   void _saveUpdate(data) {
     _updateNameKey.currentState?.save();
     Provider.of<UsersProvider>(context, listen: false).updateUserName(data);
-    Provider.of<UsersProvider>(context, listen: false).updateUserAvatar(data);
+    // Provider.of<UsersProvider>(context, listen: false).updateUserAvatar(data);
     Navigator.pop(context);
   }
 

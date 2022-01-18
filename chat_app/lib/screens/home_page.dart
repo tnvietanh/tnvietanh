@@ -1,3 +1,4 @@
+import 'package:chat_app/components/user_avatar.dart';
 import 'package:chat_app/models/user.dart';
 import 'package:chat_app/provider/auth_provider.dart';
 import 'package:chat_app/provider/user_provider.dart';
@@ -6,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../theme.dart';
+
 import 'chat_room.dart';
 import 'profile.dart';
 
@@ -19,26 +21,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
-  Stream<QuerySnapshot>? chatRooms;
-  String? currentId;
-
-  @override
-  void initState() {
-    super.initState();
-    getChatRooms();
-  }
-
-  void getChatRooms() async {
-    await Provider.of<UsersProvider>(context, listen: false)
-        .getAllUser()
-        .then((snapshots) {
-      setState(() {
-        currentId = Provider.of<AuthProvider>(context, listen: false)
-            .getIdSharedPreferences();
-        chatRooms = snapshots;
-      });
-    });
-  }
 
   BottomNavigationBar buildBottomNavigationBar() {
     return BottomNavigationBar(
@@ -50,24 +32,46 @@ class _HomePageState extends State<HomePage> {
         });
       },
       items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.messenger), label: "Chats"),
-        BottomNavigationBarItem(icon: Icon(Icons.people), label: "People"),
-        BottomNavigationBarItem(icon: Icon(Icons.call), label: "Calls"),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.messenger),
+          label: "Chats",
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.people),
+          label: "People",
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.call),
+          label: "Calls",
+        ),
       ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final currentId = Provider.of<UsersProvider>(context, listen: false)
+        .getIdSharedPreferences();
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const CircleAvatar(
-            radius: 16,
-            backgroundColor: kContentColorLightTheme,
+          icon: ClipOval(
+            child: SizedBox.fromSize(
+              size: const Size.fromRadius(20), // Image radius
+              child: UserAvatar(
+                  stream: Provider.of<UsersProvider>(context, listen: false)
+                      .getUserAvatar(currentId)),
+            ),
           ),
           onPressed: () {
-            Navigator.pushNamed(context, Profile.routeName);
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => Profile(
+                  currentId: currentId,
+                ),
+              ),
+            );
           },
         ),
         automaticallyImplyLeading: false,
@@ -85,17 +89,23 @@ class _HomePageState extends State<HomePage> {
         children: [
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: chatRooms,
+              stream: Provider.of<UsersProvider>(context, listen: false)
+                  .getAllUser(),
               builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
                 if (snapshot.hasData) {
-                  final result = snapshot.data?.docs;
+                  final listUser = snapshot.data!.docs;
                   return ListView.builder(
-                      itemCount: result!.length,
+                      itemCount: listUser.length,
                       shrinkWrap: true,
-                      itemBuilder: (context, index) =>
-                          buildItem(context, result[index], currentId));
+                      itemBuilder: (context, index) {
+                        return buildUser(
+                          context,
+                          listUser[index],
+                          currentId,
+                        );
+                      });
                 } else {
-                  return Container();
+                  return const SizedBox.shrink();
                 }
               },
             ),
@@ -107,8 +117,10 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-Widget buildItem(context, DocumentSnapshot? document, currentId) {
-  if (document != null) {
+Widget buildUser(context, DocumentSnapshot? document, currentId) {
+  if (document == null) {
+    return const SizedBox.shrink();
+  } else {
     UserModel userModel = UserModel.fromDocument(document);
     if (userModel.id == currentId) {
       return const SizedBox.shrink();
@@ -119,30 +131,48 @@ Widget buildItem(context, DocumentSnapshot? document, currentId) {
             right: kDefaultPadding * 0.5,
             top: kDefaultPadding * 0.5),
         child: InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ChatRoom(
+                  userId: userModel.id,
+                  userName: userModel.userName,
+                  currentId: currentId,
+                ),
+              ),
+            );
+          },
           child: Row(
             children: [
               Stack(
                 children: [
-                  const CircleAvatar(
-                    radius: 24,
-                    backgroundColor: kContentColorLightTheme,
-                  ),
-                  // if (userModel.isActive)
-                  Positioned(
-                    right: 0,
-                    bottom: 0,
-                    child: Container(
-                      height: 16,
-                      width: 16,
-                      decoration: BoxDecoration(
-                        color: kPrimaryColor,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                            color: Theme.of(context).scaffoldBackgroundColor,
-                            width: 3),
+                  ClipOval(
+                    child: SizedBox.fromSize(
+                      size: const Size.fromRadius(20), // Image radius
+                      child: UserAvatar(
+                        stream:
+                            Provider.of<UsersProvider>(context, listen: false)
+                                .getUserAvatar(userModel.id),
                       ),
                     ),
-                  )
+                  ),
+                  if (userModel.isOnline)
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: Container(
+                        height: 16,
+                        width: 16,
+                        decoration: BoxDecoration(
+                          color: kPrimaryColor,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                              color: Theme.of(context).scaffoldBackgroundColor,
+                              width: 3),
+                        ),
+                      ),
+                    )
                 ],
               ),
               Expanded(
@@ -157,35 +187,36 @@ Widget buildItem(context, DocumentSnapshot? document, currentId) {
                         style: const TextStyle(fontSize: 16),
                       ),
                       const SizedBox(height: 8),
-                      Opacity(
-                        opacity: 0.64,
-                        child: Text(
-                          userModel.id,
-                          // maxLines: 1,
-                          // overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
+                      buildLastMessage(context, userModel.id)
                     ],
                   ),
                 ),
               ),
             ],
           ),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ChatRoom(
-                  userId: userModel.id,
-                  userName: userModel.userName,
-                ),
-              ),
-            );
-          },
         ),
       );
     }
-  } else {
-    return const SizedBox.shrink();
   }
+}
+
+Widget buildLastMessage(BuildContext context, userId) {
+  return StreamBuilder<QuerySnapshot>(
+    stream:
+        Provider.of<UsersProvider>(context, listen: false).getMessages(userId),
+    builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+      if (snapshot.hasData) {
+        List<QueryDocumentSnapshot> listMessage = snapshot.data!.docs;
+        if (listMessage.isNotEmpty) {
+          return Text(
+            listMessage.first['message'],
+          );
+        } else {
+          return const SizedBox.shrink();
+        }
+      } else {
+        return const SizedBox.shrink();
+      }
+    },
+  );
 }

@@ -1,4 +1,3 @@
-import 'package:chat_app/provider/auth_provider.dart';
 import 'package:chat_app/provider/user_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -16,17 +15,6 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final _searchController = TextEditingController();
-  QuerySnapshot<Map<String, dynamic>>? usersSnapshot;
-
-  void searchUser() async {
-    Provider.of<UsersProvider>(context, listen: false)
-        .getUserByUserName(_searchController.text)
-        .then((snapShot) {
-      setState(() {
-        usersSnapshot = snapShot;
-      });
-    });
-  }
 
   @override
   void dispose() {
@@ -62,7 +50,9 @@ class _SearchScreenState extends State<SearchScreen> {
                     suffixIcon: IconButton(
                       icon: const Icon(Icons.search),
                       onPressed: () {
-                        searchUser();
+                        Provider.of<UsersProvider>(context, listen: false)
+                            .getUserByUserName(_searchController.text);
+                        setState(() {});
                       },
                     ),
                     hintStyle: const TextStyle(color: Colors.grey),
@@ -71,36 +61,46 @@ class _SearchScreenState extends State<SearchScreen> {
                     enabledBorder: InputBorder.none),
               ),
             ),
-            usersSnapshot == null
-                ? Container()
-                : ListView.separated(
-                    shrinkWrap: true,
-                    itemCount: usersSnapshot!.docs.length,
-                    itemBuilder: (context, index) {
-                      final result = usersSnapshot!.docs;
-                      return Row(
-                        children: [
-                          Text(result[index]['userName']),
-                          ElevatedButton(
-                              onPressed: () {
-                                Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) => ChatRoom(
+            StreamBuilder<QuerySnapshot>(
+                stream: Provider.of<UsersProvider>(context, listen: false)
+                    .getUserByUserName(_searchController.text),
+                builder:
+                    (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
+                  if (snapshot.hasData) {
+                    return ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: snapshot.data.docs.length,
+                      itemBuilder: (context, index) {
+                        final result = snapshot.data.docs;
+                        return Row(
+                          children: [
+                            Text(snapshot.data.docs[index]['userName']),
+                            ElevatedButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) => ChatRoom(
+                                              currentId:
+                                                  Provider.of<UsersProvider>(
+                                                          context,
+                                                          listen: false)
+                                                      .getIdSharedPreferences(),
                                               userId: result[index]['id'],
-                                              userName: Provider.of<
-                                                          AuthProvider>(context)
-                                                      .getNameSharedPreferences() ??
-                                                  '',
-                                            )));
-                              },
-                              child: const Text('Chat'))
-                        ],
-                      );
-                    },
-                    separatorBuilder: (BuildContext context, int index) =>
-                        const Divider(),
-                  )
+                                              userName: result[index]
+                                                  ['userName'])));
+                                },
+                                child: const Text('Chat'))
+                          ],
+                        );
+                      },
+                      separatorBuilder: (BuildContext context, int index) =>
+                          const Divider(),
+                    );
+                  } else {
+                    return const SizedBox.shrink();
+                  }
+                })
           ],
         ),
       ),

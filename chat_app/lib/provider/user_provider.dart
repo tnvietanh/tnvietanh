@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -6,50 +7,48 @@ class UsersProvider extends ChangeNotifier {
   final SharedPreferences prefs;
   UsersProvider({required this.prefs});
 
-  getUserByUserName(userName) async {
-    try {
-      final user = await FirebaseFirestore.instance
-          .collection('users')
-          .where('userName', isEqualTo: userName)
-          .get();
-      notifyListeners();
-      return user;
-    } on Exception catch (e) {
-      return e;
-    }
+  String getIdSharedPreferences() {
+    return prefs.getString('id') ?? '';
   }
 
-  Future getCurrentName() async {
-    final currentName = await FirebaseFirestore.instance
+  String getNameSharedPreferences() {
+    return prefs.getString('userName') ?? '';
+  }
+
+  Stream<QuerySnapshot> getUserByUserName(String userName) {
+    return FirebaseFirestore.instance
+        .collection('users')
+        .where('userName', isEqualTo: userName)
+        .snapshots();
+  }
+
+  Stream<QuerySnapshot> getCurrentName() {
+    return FirebaseFirestore.instance
         .collection('users')
         .where('id', isEqualTo: prefs.getString('id'))
-        .get()
-        .then((value) => value.docs[0]['userName']);
-    // print(currentName);
-    notifyListeners();
-    return currentName;
+        .snapshots();
   }
 
-  Future getCurrentAvatar() async {
-    final currentName = await FirebaseFirestore.instance
+  Stream<QuerySnapshot> getUserAvatar(userId) {
+    return FirebaseFirestore.instance
         .collection('users')
-        .where('id', isEqualTo: prefs.getString('id'))
-        .get()
-        .then((value) => value.docs[0]['photoURL']);
-
-    notifyListeners();
-    return currentName;
+        .where('id', isEqualTo: userId)
+        .snapshots();
   }
 
-  getAllUser() async {
+  Stream<QuerySnapshot> getAllUser() {
     return FirebaseFirestore.instance.collection('users').snapshots();
   }
 
-  getChatRoom() async {
-    return FirebaseFirestore.instance.collection('chatRoom').snapshots();
-  }
+  Future<void> addMessage(String userId, chatMessageMap, timestamp) {
+    final currentId = prefs.getString('id') ?? '';
+    final String chatRoomId;
+    if (currentId.compareTo(userId) > 0) {
+      chatRoomId = '$currentId-$userId';
+    } else {
+      chatRoomId = '$userId-$currentId';
+    }
 
-  Future<void> addMessage(String? chatRoomId, chatMessageMap, timestamp) {
     return FirebaseFirestore.instance
         .collection('chatRoom')
         .doc(chatRoomId)
@@ -58,7 +57,14 @@ class UsersProvider extends ChangeNotifier {
         .set(chatMessageMap);
   }
 
-  getMessages(chatRoomId) async {
+  Stream<QuerySnapshot> getMessages(String userId) {
+    final currentId = prefs.getString('id') ?? '';
+    final String chatRoomId;
+    if (currentId.compareTo(userId) > 0) {
+      chatRoomId = '$currentId-$userId';
+    } else {
+      chatRoomId = '$userId-$currentId';
+    }
     return FirebaseFirestore.instance
         .collection('chatRoom')
         .doc(chatRoomId)
@@ -67,7 +73,7 @@ class UsersProvider extends ChangeNotifier {
         .snapshots();
   }
 
-  updateUserName(dataNeedUpdate) {
+  void updateUserName(dataNeedUpdate) {
     FirebaseFirestore.instance
         .collection('users')
         .doc(prefs.getString('id'))
@@ -75,11 +81,30 @@ class UsersProvider extends ChangeNotifier {
     prefs.setString('userName', dataNeedUpdate['userName']);
   }
 
-  updateUserAvatar(dataNeedUpdate) {
+  void updateUserStatus(bool isOnline) {
     FirebaseFirestore.instance
         .collection('users')
         .doc(prefs.getString('id'))
-        .update(dataNeedUpdate);
-    prefs.setString('photoURL', dataNeedUpdate['photoURL']);
+        .update({'isOnline': isOnline});
+  }
+
+  UploadTask uploadFile(file) {
+    Reference reference =
+        FirebaseStorage.instance.ref().child(prefs.getString('id') ?? '');
+    UploadTask uploadTask = reference.putFile(file);
+
+    return uploadTask;
+  }
+
+  Future<String> getPhotoURL(userId) async {
+    String photoURL =
+        await FirebaseStorage.instance.ref(userId).getDownloadURL();
+    Map<String, Object?> dataUpdate = {'photoURL': photoURL};
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .update(dataUpdate);
+
+    return photoURL;
   }
 }

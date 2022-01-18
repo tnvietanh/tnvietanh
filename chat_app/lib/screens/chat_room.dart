@@ -1,5 +1,5 @@
+import 'package:chat_app/components/user_avatar.dart';
 import 'package:chat_app/models/message_chat.dart';
-import 'package:chat_app/provider/auth_provider.dart';
 import 'package:chat_app/provider/user_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -9,57 +9,44 @@ import '../theme.dart';
 
 class ChatRoom extends StatefulWidget {
   static const routeName = 'chat_room';
-  const ChatRoom({Key? key, required this.userId, required this.userName})
+  const ChatRoom(
+      {Key? key,
+      required this.userId,
+      required this.userName,
+      required this.currentId})
       : super(key: key);
   final String userId;
   final String userName;
+  final String currentId;
 
   @override
   _ChatRoomState createState() => _ChatRoomState();
 }
 
 class _ChatRoomState extends State<ChatRoom> {
-  Stream<QuerySnapshot>? chats;
   final _messageEditingController = TextEditingController();
   final _scrollController = ScrollController();
   final _focusNode = FocusNode();
-  late String currentUserId;
-
-  String? chatRoomId;
 
   @override
   void initState() {
     super.initState();
-    getMessages();
     _focusNode.requestFocus();
-  }
-
-  void getMessages() {
-    currentUserId = (Provider.of<AuthProvider>(context, listen: false)
-        .getIdSharedPreferences())!;
-
-    if (currentUserId.compareTo(widget.userId) > 0) {
-      chatRoomId = '$currentUserId-${widget.userId}';
-    } else {
-      chatRoomId = '${widget.userId}-$currentUserId';
-    }
-
-    Provider.of<UsersProvider>(context, listen: false)
-        .getMessages(chatRoomId)
-        .then((val) => setState(() => chats = val));
   }
 
   void addMessage(messageText) {
     if (messageText.isNotEmpty) {
       final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
       Map<String, dynamic> chatMessageMap = MessageChat(
+        toUser: widget.userName,
+        idFrom: widget.currentId,
+        idTo: widget.userId,
         message: messageText,
-        sendBy: currentUserId,
         timestamp: timestamp,
       ).toJson();
 
       Provider.of<UsersProvider>(context, listen: false)
-          .addMessage(chatRoomId, chatMessageMap, timestamp);
+          .addMessage(widget.userId, chatMessageMap, timestamp);
       _messageEditingController.clear();
       _scrollDown();
     }
@@ -80,8 +67,13 @@ class _ChatRoomState extends State<ChatRoom> {
         centerTitle: false,
         title: Row(
           children: [
-            const CircleAvatar(
-              backgroundColor: kContentColorLightTheme,
+            ClipOval(
+              child: SizedBox.fromSize(
+                size: const Size.fromRadius(20), // Image radius
+                child: UserAvatar(
+                    stream: Provider.of<UsersProvider>(context, listen: false)
+                        .getUserAvatar(widget.userId)),
+              ),
             ),
             const SizedBox(width: kDefaultPadding * 0.75),
             Column(
@@ -116,8 +108,9 @@ class _ChatRoomState extends State<ChatRoom> {
         child: Column(
           children: [
             Expanded(
-              child: StreamBuilder(
-                stream: chats,
+              child: StreamBuilder<QuerySnapshot>(
+                stream: Provider.of<UsersProvider>(context, listen: false)
+                    .getMessages(widget.userId),
                 builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
                   if (snapshot.hasData) {
                     final result = snapshot.data?.docs;
@@ -127,8 +120,10 @@ class _ChatRoomState extends State<ChatRoom> {
                         itemCount: result!.length,
                         itemBuilder: (context, index) {
                           return Message(
+                            userId: widget.userId,
                             message: result[index]["message"],
-                            sendByMe: result[index]["sendBy"] == currentUserId,
+                            sendByMe:
+                                result[index]["idFrom"] == widget.currentId,
                           );
                         });
                   } else {
@@ -139,7 +134,7 @@ class _ChatRoomState extends State<ChatRoom> {
             ),
             Container(
               padding: const EdgeInsets.symmetric(
-                horizontal: kDefaultPadding,
+                horizontal: kDefaultPadding / 2,
                 vertical: kDefaultPadding / 2,
               ),
               decoration: BoxDecoration(
@@ -218,46 +213,64 @@ class _ChatRoomState extends State<ChatRoom> {
 class Message extends StatelessWidget {
   final String message;
   final bool sendByMe;
+  final String userId;
 
-  const Message({Key? key, required this.message, required this.sendByMe})
-      : super(key: key);
+  const Message({
+    Key? key,
+    required this.message,
+    required this.sendByMe,
+    required this.userId,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Padding(
       padding: EdgeInsets.only(
         top: kDefaultPadding / 2,
-        left: sendByMe ? kDefaultPadding * 5 : kDefaultPadding,
-        bottom: 0,
-        right: sendByMe ? kDefaultPadding : kDefaultPadding * 5,
+        left: sendByMe ? kDefaultPadding * 5 : kDefaultPadding / 2,
+        right: sendByMe ? kDefaultPadding / 2 : kDefaultPadding * 5,
       ),
-      alignment: sendByMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: kDefaultPadding * 0.75,
-          vertical: kDefaultPadding / 2,
-        ),
-        decoration: BoxDecoration(
-          borderRadius: sendByMe
-              ? const BorderRadius.only(
-                  topLeft: Radius.circular(30),
-                  topRight: Radius.circular(30),
-                  bottomLeft: Radius.circular(30),
-                  bottomRight: Radius.circular(8))
-              : const BorderRadius.only(
-                  topLeft: Radius.circular(30),
-                  topRight: Radius.circular(30),
-                  bottomRight: Radius.circular(30),
-                  bottomLeft: Radius.circular(8)),
-          color: sendByMe ? kPrimaryColor : kPrimaryColor.withOpacity(0.2),
-        ),
-        child: Text(message,
-            textAlign: TextAlign.start,
-            style: TextStyle(
-              color:
-                  sendByMe ? kContentColorDarkTheme : kContentColorLightTheme,
-              fontSize: 16,
-            )),
+      child: Row(
+        mainAxisAlignment:
+            sendByMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (!sendByMe)
+            ClipOval(
+              child: SizedBox.fromSize(
+                size: const Size.fromRadius(12), // Image radius
+                child: UserAvatar(
+                  stream: Provider.of<UsersProvider>(context, listen: false)
+                      .getUserAvatar(userId),
+                ),
+              ),
+            ),
+          const SizedBox(width: kDefaultPadding / 2),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: kDefaultPadding * 0.75,
+              vertical: kDefaultPadding / 2,
+            ),
+            decoration: BoxDecoration(
+              borderRadius: sendByMe
+                  ? BorderRadius.circular(28)
+                  : const BorderRadius.only(
+                      topLeft: Radius.circular(28),
+                      topRight: Radius.circular(28),
+                      bottomRight: Radius.circular(28),
+                      bottomLeft: Radius.circular(8)),
+              color: sendByMe ? kPrimaryColor : kPrimaryColor.withOpacity(0.2),
+            ),
+            child: Text(message,
+                textAlign: TextAlign.start,
+                style: TextStyle(
+                  color: sendByMe
+                      ? kContentColorDarkTheme
+                      : kContentColorLightTheme,
+                  fontSize: 16,
+                )),
+          ),
+        ],
       ),
     );
   }

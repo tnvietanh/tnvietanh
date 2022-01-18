@@ -18,14 +18,6 @@ class AuthProvider extends ChangeNotifier {
   Status _status = Status.uninitialized;
   Status get status => _status;
 
-  String? getIdSharedPreferences() {
-    return prefs.getString('id');
-  }
-
-  String? getNameSharedPreferences() {
-    return prefs.getString('userName');
-  }
-
   Future<bool> isLoggedIn() async {
     if (prefs.getString('id')?.isNotEmpty == true) {
       return true;
@@ -50,7 +42,6 @@ class AuthProvider extends ChangeNotifier {
 
       final List<DocumentSnapshot> documents = result.docs;
       if (documents.isEmpty) {
-        // Writing data to server because here is a new user
         FirebaseFirestore.instance
             .collection('users')
             .doc(firebaseUser.uid)
@@ -58,23 +49,22 @@ class AuthProvider extends ChangeNotifier {
           'id': firebaseUser.uid,
           'userName': firebaseUser.displayName,
           'createdAt': DateTime.now().millisecondsSinceEpoch.toString(),
-          'photoURL': firebaseUser.photoURL,
+          'photoURL': '',
+          'isOnline': true,
         });
-
-        // Write data to local storage
 
         await prefs.setString('id', firebaseUser.uid);
         await prefs.setString('userName', firebaseUser.displayName ?? "");
-        // await prefs.setString('photoUrl', currentUser.photoURL ?? "");
       } else {
-        // Already sign up, just get data from firestore
+        FirebaseFirestore.instance
+            .collection('users')
+            .doc(firebaseUser.uid)
+            .update({'isOnline': true});
         DocumentSnapshot documentSnapshot = documents[0];
         UserModel userModel = UserModel.fromDocument(documentSnapshot);
-        // Write data to local
+
         await prefs.setString('id', userModel.id);
         await prefs.setString('userName', userModel.userName);
-        // await prefs.setString('photoUrl', userModel.photoUrl);
-
       }
       _status = Status.authenticated;
       notifyListeners();
@@ -101,11 +91,11 @@ class AuthProvider extends ChangeNotifier {
         print('The account already exists for that email.');
       }
     }
-    notifyListeners();
   }
 
   Future<void> signOut() async {
     _status = Status.uninitialized;
+    notifyListeners();
     await _auth.signOut();
     await prefs.clear();
   }
