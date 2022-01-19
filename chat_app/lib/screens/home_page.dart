@@ -81,43 +81,56 @@ class _HomePageState extends State<HomePage> {
       ),
       body: Column(
         children: [
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: Provider.of<UsersProvider>(context, listen: false)
-                  .getAllUser(),
-              builder: (context, AsyncSnapshot<QuerySnapshot> userSnapshot) {
-                if (userSnapshot.hasData) {
-                  final listUser = userSnapshot.data!.docs;
-                  return ListView.builder(
-                    itemCount: listUser.length,
-                    shrinkWrap: true,
-                    itemBuilder: (context, index) {
-                      return StreamBuilder(
-                        stream:
-                            Provider.of<UsersProvider>(context, listen: false)
-                                .getUserChattingWith(listUser[index]['id']),
-                        builder:
-                            (context, AsyncSnapshot<QuerySnapshot> chatting) {
-                          if (chatting.hasData &&
-                              chatting.data!.docs.isNotEmpty) {
-                            return buildUser(
-                              context,
-                              listUser[index],
-                              currentId,
-                            );
-                          } else {
-                            return const SizedBox.shrink();
-                          }
-                        },
-                      );
+          _selectedIndex == 2
+              ? const Center(child: Text('...developing...'))
+              : Expanded(
+                  child: StreamBuilder<QuerySnapshot>(
+                    stream: Provider.of<UsersProvider>(context, listen: false)
+                        .getAllUser(),
+                    builder:
+                        (context, AsyncSnapshot<QuerySnapshot> userSnapshot) {
+                      if (userSnapshot.hasData) {
+                        final listUser = userSnapshot.data!.docs;
+                        return ListView.builder(
+                          itemCount: listUser.length,
+                          shrinkWrap: true,
+                          itemBuilder: (context, index) {
+                            if (_selectedIndex == 0) {
+                              return StreamBuilder(
+                                stream: Provider.of<UsersProvider>(context,
+                                        listen: false)
+                                    .getUserChattingWith(listUser[index]['id']),
+                                builder: (context,
+                                    AsyncSnapshot<QuerySnapshot> chatting) {
+                                  if (chatting.hasData &&
+                                      chatting.data!.docs.isNotEmpty) {
+                                    return buildUser(
+                                      context,
+                                      listUser[index],
+                                      currentId,
+                                      _selectedIndex,
+                                    );
+                                  } else {
+                                    return const SizedBox.shrink();
+                                  }
+                                },
+                              );
+                            } else {
+                              return buildUser(
+                                context,
+                                listUser[index],
+                                currentId,
+                                _selectedIndex,
+                              );
+                            }
+                          },
+                        );
+                      } else {
+                        return const SizedBox.shrink();
+                      }
                     },
-                  );
-                } else {
-                  return const SizedBox.shrink();
-                }
-              },
-            ),
-          ),
+                  ),
+                ),
         ],
       ),
       bottomNavigationBar: buildBottomNavigationBar(),
@@ -125,7 +138,12 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-Widget buildUser(context, DocumentSnapshot? document, currentId) {
+Widget buildUser(
+  BuildContext context,
+  DocumentSnapshot? document,
+  String currentId,
+  int selectedIndex,
+) {
   if (document == null) {
     return const SizedBox.shrink();
   } else {
@@ -195,7 +213,8 @@ Widget buildUser(context, DocumentSnapshot? document, currentId) {
                         style: const TextStyle(fontSize: 16),
                       ),
                       const SizedBox(height: 8),
-                      buildLastMessage(context, userModel.id)
+                      if (selectedIndex == 0)
+                        buildLastMessage(context, userModel.id)
                     ],
                   ),
                 ),
@@ -208,7 +227,10 @@ Widget buildUser(context, DocumentSnapshot? document, currentId) {
   }
 }
 
-Widget buildLastMessage(BuildContext context, userId) {
+Widget buildLastMessage(
+  BuildContext context,
+  String userId,
+) {
   return StreamBuilder<QuerySnapshot>(
     stream:
         Provider.of<UsersProvider>(context, listen: false).getMessages(userId),
