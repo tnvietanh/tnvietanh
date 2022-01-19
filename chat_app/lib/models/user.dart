@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class UserModel {
   String id;
   String userName;
-  String createdAt;
   String email;
   String photoURL;
   bool isOnline;
@@ -14,45 +13,26 @@ class UserModel {
     required this.email,
     required this.photoURL,
     required this.isOnline,
-    required this.createdAt,
   });
   factory UserModel.fromDocument(DocumentSnapshot doc) {
     String userName = '';
     String email = '';
     String photoURL = '';
     bool isOnline = false;
-    String createdAt = '';
 
-    try {
-      // userName = doc['userName'];   Bad state: field does not exist within the DocumentSnapshotPlatform
-      userName =
-          doc.data().toString().contains('userName') ? doc.get('userName') : '';
-    } catch (e) {}
+    userName =
+        doc.data().toString().contains('userName') ? doc.get('userName') : '';
 
-    try {
-      // email = doc['email'];   Bad state: field does not exist within the DocumentSnapshotPlatform
-      email = doc.data().toString().contains('email') ? doc.get('email') : '';
-    } catch (e) {}
-    try {
-      // photoURL = doc['photoURL'];   Bad state: field does not exist within the DocumentSnapshotPlatform
-      photoURL =
-          doc.data().toString().contains('photoURL') ? doc.get('photoURL') : '';
-    } catch (e) {}
-    try {
-      // isOnline = doc['isOnline'];   Bad state: field does not exist within the DocumentSnapshotPlatform
-      isOnline = doc.data().toString().contains('isOnline')
-          ? doc.get('isOnline')
-          : false;
-    } catch (e) {}
-    try {
-      // createdAt = doc['createdAt'];   Bad state: field does not exist within the DocumentSnapshotPlatform
-      createdAt = doc.data().toString().contains('createdAt')
-          ? doc.get('createdAt')
-          : '';
-    } catch (e) {}
+    email = doc.data().toString().contains('email') ? doc.get('email') : '';
+
+    photoURL =
+        doc.data().toString().contains('photoURL') ? doc.get('photoURL') : '';
+
+    isOnline = doc.data().toString().contains('isOnline')
+        ? doc.get('isOnline')
+        : false;
 
     return UserModel(
-      createdAt: createdAt,
       isOnline: isOnline,
       id: doc.id,
       userName: userName,
@@ -66,6 +46,5 @@ class UserModel {
         'email': email,
         'photoURL': photoURL,
         'isOnline': isOnline,
-        'createdAt': createdAt,
       };
 }

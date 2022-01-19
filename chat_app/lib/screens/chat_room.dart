@@ -1,5 +1,4 @@
 import 'package:chat_app/components/user_avatar.dart';
-import 'package:chat_app/models/message_chat.dart';
 import 'package:chat_app/provider/user_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -36,17 +35,8 @@ class _ChatRoomState extends State<ChatRoom> {
 
   void addMessage(messageText) {
     if (messageText.isNotEmpty) {
-      final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
-      Map<String, dynamic> chatMessageMap = MessageChat(
-        toUser: widget.userName,
-        idFrom: widget.currentId,
-        idTo: widget.userId,
-        message: messageText,
-        timestamp: timestamp,
-      ).toJson();
-
       Provider.of<UsersProvider>(context, listen: false)
-          .addMessage(widget.userId, chatMessageMap, timestamp);
+          .addMessage(widget.userId, widget.userName, messageText);
       _messageEditingController.clear();
       _scrollDown();
     }

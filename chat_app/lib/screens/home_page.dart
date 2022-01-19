@@ -1,6 +1,5 @@
 import 'package:chat_app/components/user_avatar.dart';
 import 'package:chat_app/models/user.dart';
-import 'package:chat_app/provider/auth_provider.dart';
 import 'package:chat_app/provider/user_provider.dart';
 import 'package:chat_app/screens/search_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -51,7 +50,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final currentId = Provider.of<UsersProvider>(context, listen: false)
-        .getIdSharedPreferences();
+        .getDataSharedPreferences('id');
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -63,16 +62,11 @@ class _HomePageState extends State<HomePage> {
                       .getUserAvatar(currentId)),
             ),
           ),
-          onPressed: () {
-            Navigator.push(
+          onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => Profile(
-                  currentId: currentId,
-                ),
-              ),
-            );
-          },
+                builder: (context) => Profile(currentId: currentId),
+              )),
         ),
         automaticallyImplyLeading: false,
         title: const Text("Chat"),
@@ -91,19 +85,33 @@ class _HomePageState extends State<HomePage> {
             child: StreamBuilder<QuerySnapshot>(
               stream: Provider.of<UsersProvider>(context, listen: false)
                   .getAllUser(),
-              builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-                if (snapshot.hasData) {
-                  final listUser = snapshot.data!.docs;
+              builder: (context, AsyncSnapshot<QuerySnapshot> userSnapshot) {
+                if (userSnapshot.hasData) {
+                  final listUser = userSnapshot.data!.docs;
                   return ListView.builder(
-                      itemCount: listUser.length,
-                      shrinkWrap: true,
-                      itemBuilder: (context, index) {
-                        return buildUser(
-                          context,
-                          listUser[index],
-                          currentId,
-                        );
-                      });
+                    itemCount: listUser.length,
+                    shrinkWrap: true,
+                    itemBuilder: (context, index) {
+                      return StreamBuilder(
+                        stream:
+                            Provider.of<UsersProvider>(context, listen: false)
+                                .getUserChattingWith(listUser[index]['id']),
+                        builder:
+                            (context, AsyncSnapshot<QuerySnapshot> chatting) {
+                          if (chatting.hasData &&
+                              chatting.data!.docs.isNotEmpty) {
+                            return buildUser(
+                              context,
+                              listUser[index],
+                              currentId,
+                            );
+                          } else {
+                            return const SizedBox.shrink();
+                          }
+                        },
+                      );
+                    },
+                  );
                 } else {
                   return const SizedBox.shrink();
                 }

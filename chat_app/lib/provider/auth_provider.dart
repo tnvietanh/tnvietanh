@@ -42,16 +42,17 @@ class AuthProvider extends ChangeNotifier {
 
       final List<DocumentSnapshot> documents = result.docs;
       if (documents.isEmpty) {
+        Map<String, dynamic> userModel = UserModel(
+          email: email,
+          id: firebaseUser.uid,
+          isOnline: true,
+          photoURL: '',
+          userName: firebaseUser.displayName ?? '',
+        ).toJson();
         FirebaseFirestore.instance
             .collection('users')
             .doc(firebaseUser.uid)
-            .set({
-          'id': firebaseUser.uid,
-          'userName': firebaseUser.displayName,
-          'createdAt': DateTime.now().millisecondsSinceEpoch.toString(),
-          'photoURL': '',
-          'isOnline': true,
-        });
+            .set(userModel);
 
         await prefs.setString('id', firebaseUser.uid);
         await prefs.setString('userName', firebaseUser.displayName ?? "");

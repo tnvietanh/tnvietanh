@@ -12,8 +12,6 @@ class UserAvatar extends StatelessWidget {
         if (snapshot.hasData == false ||
             snapshot.data.docs[0]['photoURL'] == '') {
           return Image.asset('assets/images/no_avatar.png', fit: BoxFit.cover);
-        } else if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
         } else {
           return Image.network(snapshot.data.docs[0]['photoURL'],
               fit: BoxFit.cover);

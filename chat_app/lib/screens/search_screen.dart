@@ -85,7 +85,8 @@ class _SearchScreenState extends State<SearchScreen> {
                                                   Provider.of<UsersProvider>(
                                                           context,
                                                           listen: false)
-                                                      .getIdSharedPreferences(),
+                                                      .getDataSharedPreferences(
+                                                          'id'),
                                               userId: result[index]['id'],
                                               userName: result[index]
                                                   ['userName'])));
