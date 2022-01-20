@@ -1,10 +1,10 @@
 import 'dart:io';
 
-import 'package:chat_app/components/user_avatar.dart';
 import 'package:chat_app/provider/auth_provider.dart';
 import 'package:chat_app/provider/user_provider.dart';
 import 'package:chat_app/screens/authentication.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -21,79 +21,77 @@ class Profile extends StatefulWidget {
 }
 
 class _ProfileState extends State<Profile> {
-  String photoURL = '';
+  File? imageFile;
 
-  void _openGallery() async {
-    await ImagePicker().pickImage(source: ImageSource.gallery).then((value) =>
-        Provider.of<UsersProvider>(context, listen: false)
-            .uploadFile(File(value!.path)));
-    await Provider.of<UsersProvider>(context, listen: false)
-        .getPhotoURL(widget.currentId)
-        .then((value) => setState(() {
-              photoURL = value;
-            }));
-    // print(photoURL);
+  void _imagePicker(ImageSource key) async {
+    final pickerFile = await ImagePicker().pickImage(source: key);
+    if (pickerFile != null) {
+      setState(() {
+        imageFile = File(pickerFile.path);
+      });
+      uploadFile(File(pickerFile.path));
+      Navigator.pop(context);
+    } else {
+      print('no file picked');
+    }
   }
 
-  void _openCamera() async {
-    await ImagePicker().pickImage(source: ImageSource.camera).then((value) =>
-        Provider.of<UsersProvider>(context, listen: false)
-            .uploadFile(File(value!.path)));
-    await Provider.of<UsersProvider>(context, listen: false)
-        .getPhotoURL(widget.currentId)
-        .then((value) => setState(() {
-              photoURL = value;
-            }));
-    // print(photoURL);
+  void uploadFile(File file) async {
+    UploadTask uploadTask = Provider.of<UsersProvider>(context, listen: false)
+        .uploadFile(file, 'avatar', widget.currentId);
+    TaskSnapshot snapshot = await uploadTask;
+    final photoURL = await snapshot.ref.getDownloadURL();
+    Provider.of<UsersProvider>(context, listen: false)
+        .updateCurrentUser('photoURL', photoURL);
   }
 
   Future<void> _showChoiceDialog(BuildContext context) {
     return showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text(
-              "Choose option",
-              style: TextStyle(color: kPrimaryColor),
-            ),
-            content: SingleChildScrollView(
-              child: ListBody(
-                children: [
-                  const Divider(
-                    height: 1,
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text(
+            "Choose option",
+            style: TextStyle(color: kPrimaryColor),
+          ),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: [
+                const Divider(
+                  height: 1,
+                  color: kPrimaryColor,
+                ),
+                ListTile(
+                  onTap: () {
+                    _imagePicker(ImageSource.gallery);
+                  },
+                  title: const Text("Gallery"),
+                  leading: const Icon(
+                    Icons.account_box,
                     color: kPrimaryColor,
                   ),
-                  ListTile(
-                    onTap: () {
-                      _openGallery();
-                      Navigator.pop(context);
-                    },
-                    title: const Text("Gallery"),
-                    leading: const Icon(
-                      Icons.account_box,
-                      color: kPrimaryColor,
-                    ),
-                  ),
-                  const Divider(
-                    height: 1,
+                ),
+                const Divider(
+                  height: 1,
+                  color: kPrimaryColor,
+                ),
+                ListTile(
+                  onTap: () {
+                    _imagePicker(ImageSource.camera);
+                    Navigator.pop(context);
+                  },
+                  title: const Text("Camera"),
+                  leading: const Icon(
+                    Icons.camera,
                     color: kPrimaryColor,
                   ),
-                  ListTile(
-                    onTap: () {
-                      _openCamera();
-                      Navigator.pop(context);
-                    },
-                    title: const Text("Camera"),
-                    leading: const Icon(
-                      Icons.camera,
-                      color: kPrimaryColor,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          );
-        });
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -121,10 +119,24 @@ class _ProfileState extends State<Profile> {
                     onTap: () {
                       _showChoiceDialog(context);
                     },
-                    child: UserAvatar(
-                        stream:
-                            Provider.of<UsersProvider>(context, listen: false)
-                                .getUserAvatar(widget.currentId)),
+                    child: imageFile != null
+                        ? Image.file(
+                            File(imageFile!.path),
+                            fit: BoxFit.cover,
+                          )
+                        : Provider.of<UsersProvider>(context, listen: false)
+                                    .getDataSharedPreferences('photoURL') !=
+                                ''
+                            ? Image.network(
+                                Provider.of<UsersProvider>(context,
+                                        listen: false)
+                                    .getDataSharedPreferences('photoURL'),
+                                fit: BoxFit.cover,
+                              )
+                            : Image.asset(
+                                'assets/images/no_avatar.png',
+                                fit: BoxFit.cover,
+                              ),
                   ),
                 ),
               ),
@@ -175,10 +187,10 @@ class _ProfileState extends State<Profile> {
                     icon: Icons.manage_accounts,
                     backgroundColor: Colors.grey,
                     onTap: () {
-                      Navigator.pushNamed(
-                        context,
-                        UpdateProfile.routeName,
-                      );
+                      Navigator.pushNamed(context, UpdateProfile.routeName,
+                          arguments:
+                              Provider.of<UsersProvider>(context, listen: false)
+                                  .getDataSharedPreferences('userName'));
                     },
                   ),
                   BuildButton(
@@ -190,7 +202,7 @@ class _ProfileState extends State<Profile> {
                       Provider.of<AuthProvider>(context, listen: false)
                           .signOut();
                       Provider.of<UsersProvider>(context, listen: false)
-                          .updateUserStatus(false);
+                          .updateCurrentUser('isOnline', false);
                       Navigator.pushNamedAndRemoveUntil(
                           context,
                           AuthScreen.routeName,

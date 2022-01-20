@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:chat_app/models/message_chat.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -8,7 +10,7 @@ class UsersProvider extends ChangeNotifier {
   final SharedPreferences prefs;
   UsersProvider({required this.prefs});
 
-  String getDataSharedPreferences(key) {
+  String getDataSharedPreferences(String key) {
     return prefs.getString(key) ?? '';
   }
 
@@ -26,7 +28,7 @@ class UsersProvider extends ChangeNotifier {
         .snapshots();
   }
 
-  Stream<QuerySnapshot> getUserAvatar(userId) {
+  Stream<QuerySnapshot> getUserAvatar(String userId) {
     return FirebaseFirestore.instance
         .collection('users')
         .where('id', isEqualTo: userId)
@@ -54,7 +56,7 @@ class UsersProvider extends ChangeNotifier {
     } else {
       chatRoomId = '$userId-$currentId';
     }
-    // updateChattingWith(userId);
+
     chattingWith(userId);
     return FirebaseFirestore.instance
         .collection('chatRoom')
@@ -63,34 +65,6 @@ class UsersProvider extends ChangeNotifier {
         .doc(DateTime.now().millisecondsSinceEpoch.toString())
         .set(chatMessageMap);
   }
-
-  // final List<String> currentIdChattingWith = [];
-  // final List<String> listUserIdChattingWith = [];
-  // void updateChattingWith(userId) {
-  //   if (listUserIdChattingWith.contains(userId)) {
-  //   } else {
-  //     listUserIdChattingWith.add(userId);
-  //     FirebaseFirestore.instance
-  //         .collection('users')
-  //         .doc(prefs.getString('id'))
-  //         .update({'chattingWith': listUserIdChattingWith});
-  //   }
-
-  //   if (currentIdChattingWith.contains(prefs.getString('id'))) {
-  //     FirebaseFirestore.instance
-  //         .collection('users')
-  //         .doc(userId)
-  //         .update({'chattingWith': currentIdChattingWith});
-  //   } else {
-  //     currentIdChattingWith.add(prefs.getString('id') ?? '');
-  //     FirebaseFirestore.instance
-  //         .collection('users')
-  //         .doc(userId)
-  //         .update({'chattingWith': currentIdChattingWith});
-  //   }
-  //   print(currentIdChattingWith);
-  //   print(listUserIdChattingWith);
-  // }
 
   void chattingWith(String userId) {
     FirebaseFirestore.instance
@@ -132,38 +106,20 @@ class UsersProvider extends ChangeNotifier {
         .snapshots();
   }
 
-  void updateUserName(dataNeedUpdate) {
+  void updateCurrentUser(String dataNeedUpdate, dynamic value) {
     FirebaseFirestore.instance
         .collection('users')
         .doc(prefs.getString('id'))
-        .update(dataNeedUpdate);
-    prefs.setString('userName', dataNeedUpdate['userName']);
+        .update({dataNeedUpdate: value});
+    if (value != true || value != false) {
+      prefs.setString(dataNeedUpdate, value.toString());
+    }
   }
 
-  void updateUserStatus(bool isOnline) {
-    FirebaseFirestore.instance
-        .collection('users')
-        .doc(prefs.getString('id'))
-        .update({'isOnline': isOnline});
-  }
-
-  UploadTask uploadFile(file) {
+  UploadTask uploadFile(File file, String folderName, String fileName) {
     Reference reference =
-        FirebaseStorage.instance.ref().child(prefs.getString('id') ?? '');
+        FirebaseStorage.instance.ref(folderName).child(fileName);
     UploadTask uploadTask = reference.putFile(file);
-
     return uploadTask;
-  }
-
-  Future<String> getPhotoURL(userId) async {
-    String photoURL =
-        await FirebaseStorage.instance.ref(userId).getDownloadURL();
-    Map<String, Object?> dataUpdate = {'photoURL': photoURL};
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .update(dataUpdate);
-
-    return photoURL;
   }
 }

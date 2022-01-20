@@ -46,7 +46,7 @@ class AuthProvider extends ChangeNotifier {
           email: email,
           id: firebaseUser.uid,
           isOnline: true,
-          photoURL: '',
+          photoURL: firebaseUser.photoURL ?? '',
           userName: firebaseUser.displayName ?? '',
         ).toJson();
         FirebaseFirestore.instance
@@ -55,7 +55,8 @@ class AuthProvider extends ChangeNotifier {
             .set(userModel);
 
         await prefs.setString('id', firebaseUser.uid);
-        await prefs.setString('userName', firebaseUser.displayName ?? "");
+        await prefs.setString('userName', firebaseUser.displayName ?? '');
+        await prefs.setString('photoURL', firebaseUser.photoURL ?? '');
       } else {
         FirebaseFirestore.instance
             .collection('users')
@@ -66,6 +67,7 @@ class AuthProvider extends ChangeNotifier {
 
         await prefs.setString('id', userModel.id);
         await prefs.setString('userName', userModel.userName);
+        await prefs.setString('photoURL', userModel.photoURL);
       }
       _status = Status.authenticated;
       notifyListeners();

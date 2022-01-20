@@ -116,8 +116,12 @@ class _ChatRoomState extends State<ChatRoom> {
                                 result[index]["idFrom"] == widget.currentId,
                           );
                         });
-                  } else {
-                    return Container();
+                  } else if (snapshot.connectionState ==
+                      ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  {
+                    return const SizedBox.shrink();
                   }
                 },
               ),
