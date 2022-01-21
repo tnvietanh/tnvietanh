@@ -28,7 +28,7 @@ class _UpdateProfileState extends State<UpdateProfile> {
   void _saveUpdate(data) {
     _updateNameKey.currentState?.save();
     Provider.of<UsersProvider>(context, listen: false)
-        .updateCurrentUser('userName', data['userName']);
+        .updateDataCurrentUser('userName', data['userName']);
     Navigator.pop(context);
   }
 

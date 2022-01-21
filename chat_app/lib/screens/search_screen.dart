@@ -51,7 +51,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       icon: const Icon(Icons.search),
                       onPressed: () {
                         Provider.of<UsersProvider>(context, listen: false)
-                            .getUserByUserName(_searchController.text);
+                            .getDataUser('userName', _searchController.text);
                         setState(() {});
                       },
                     ),
@@ -63,7 +63,7 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
             StreamBuilder<QuerySnapshot>(
                 stream: Provider.of<UsersProvider>(context, listen: false)
-                    .getUserByUserName(_searchController.text),
+                    .getDataUser('userName', _searchController.text),
                 builder:
                     (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
                   if (snapshot.hasData) {
@@ -71,25 +71,24 @@ class _SearchScreenState extends State<SearchScreen> {
                       shrinkWrap: true,
                       itemCount: snapshot.data.docs.length,
                       itemBuilder: (context, index) {
-                        final result = snapshot.data.docs;
+                        final user = snapshot.data.docs;
                         return Row(
                           children: [
-                            Text(snapshot.data.docs[index]['userName']),
+                            Text(user[index]['userName']),
                             ElevatedButton(
                                 onPressed: () {
                                   Navigator.push(
                                       context,
                                       MaterialPageRoute(
                                           builder: (context) => ChatRoom(
-                                              currentId:
-                                                  Provider.of<UsersProvider>(
-                                                          context,
-                                                          listen: false)
-                                                      .getDataSharedPreferences(
-                                                          'id'),
-                                              userId: result[index]['id'],
-                                              userName: result[index]
-                                                  ['userName'])));
+                                                currentId: Provider.of<
+                                                            UsersProvider>(
+                                                        context,
+                                                        listen: false)
+                                                    .getDataSharedPreferences(
+                                                        'id'),
+                                                document: user[index],
+                                              )));
                                 },
                                 child: const Text('Chat'))
                           ],

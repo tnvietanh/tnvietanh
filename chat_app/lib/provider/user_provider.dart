@@ -14,39 +14,25 @@ class UsersProvider extends ChangeNotifier {
     return prefs.getString(key) ?? '';
   }
 
-  Stream<QuerySnapshot> getUserByUserName(String userName) {
-    return FirebaseFirestore.instance
-        .collection('users')
-        .where('userName', isEqualTo: userName)
-        .snapshots();
-  }
-
-  Stream<QuerySnapshot> getCurrentName() {
-    return FirebaseFirestore.instance
-        .collection('users')
-        .where('id', isEqualTo: prefs.getString('id'))
-        .snapshots();
-  }
-
-  Stream<QuerySnapshot> getUserAvatar(String userId) {
-    return FirebaseFirestore.instance
-        .collection('users')
-        .where('id', isEqualTo: userId)
-        .snapshots();
-  }
-
   Stream<QuerySnapshot> getAllUser() {
     return FirebaseFirestore.instance.collection('users').snapshots();
   }
 
-  Future<void> addMessage(String userId, String userName, String text) {
+  Stream<QuerySnapshot> getDataUser(String data, dynamic value) {
+    return FirebaseFirestore.instance
+        .collection('users')
+        .where(data, isEqualTo: value)
+        .snapshots();
+  }
+
+  Future<void> addMessage(String userId, String text, String type) {
     final currentId = prefs.getString('id') ?? '';
 
     Map<String, dynamic> chatMessageMap = MessageChat(
-            toUser: userName,
+            message: text,
+            type: type,
             idFrom: currentId,
             idTo: userId,
-            message: text,
             timestamp: DateTime.now().millisecondsSinceEpoch.toString())
         .toJson();
 
@@ -106,12 +92,14 @@ class UsersProvider extends ChangeNotifier {
         .snapshots();
   }
 
-  void updateCurrentUser(String dataNeedUpdate, dynamic value) {
+  void updateDataCurrentUser(String dataNeedUpdate, dynamic value, {bool}) {
     FirebaseFirestore.instance
         .collection('users')
         .doc(prefs.getString('id'))
         .update({dataNeedUpdate: value});
-    if (value != true || value != false) {
+    if (value != true && value != false) {
+      prefs.setString(dataNeedUpdate, value);
+    } else {
       prefs.setString(dataNeedUpdate, value.toString());
     }
   }

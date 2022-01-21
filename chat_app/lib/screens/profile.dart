@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:chat_app/provider/auth_provider.dart';
 import 'package:chat_app/provider/user_provider.dart';
 import 'package:chat_app/screens/authentication.dart';
@@ -8,14 +7,14 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-
 import '../theme.dart';
+import 'photo_view.dart';
 import 'update_profile.dart';
 
 class Profile extends StatefulWidget {
   static const routeName = 'profile';
-  const Profile({Key? key, required this.currentId}) : super(key: key);
-  final String currentId;
+  const Profile({Key? key, required this.profileId}) : super(key: key);
+  final String profileId;
   @override
   State<Profile> createState() => _ProfileState();
 }
@@ -24,7 +23,8 @@ class _ProfileState extends State<Profile> {
   File? imageFile;
 
   void _imagePicker(ImageSource key) async {
-    final pickerFile = await ImagePicker().pickImage(source: key);
+    final pickerFile =
+        await ImagePicker().pickImage(source: key, imageQuality: 25);
     if (pickerFile != null) {
       setState(() {
         imageFile = File(pickerFile.path);
@@ -38,11 +38,11 @@ class _ProfileState extends State<Profile> {
 
   void uploadFile(File file) async {
     UploadTask uploadTask = Provider.of<UsersProvider>(context, listen: false)
-        .uploadFile(file, 'avatar', widget.currentId);
+        .uploadFile(file, 'avatar', widget.profileId);
     TaskSnapshot snapshot = await uploadTask;
     final photoURL = await snapshot.ref.getDownloadURL();
     Provider.of<UsersProvider>(context, listen: false)
-        .updateCurrentUser('photoURL', photoURL);
+        .updateDataCurrentUser('photoURL', photoURL);
   }
 
   Future<void> _showChoiceDialog(BuildContext context) {
@@ -50,39 +50,49 @@ class _ProfileState extends State<Profile> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text(
-            "Choose option",
-            style: TextStyle(color: kPrimaryColor),
-          ),
+          // title: const Text(
+          //   "Thay đổi",
+          //   style: TextStyle(color: kPrimaryColor),
+          // ),
           content: SingleChildScrollView(
             child: ListBody(
               children: [
-                const Divider(
-                  height: 1,
-                  color: kPrimaryColor,
-                ),
+                // const Divider(height: 2, color: kPrimaryColor),
                 ListTile(
                   onTap: () {
                     _imagePicker(ImageSource.gallery);
                   },
-                  title: const Text("Gallery"),
+                  title: const Text("Thư viện"),
                   leading: const Icon(
                     Icons.account_box,
                     color: kPrimaryColor,
                   ),
                 ),
-                const Divider(
-                  height: 1,
-                  color: kPrimaryColor,
-                ),
+                const Divider(height: 2, color: kPrimaryColor),
                 ListTile(
                   onTap: () {
                     _imagePicker(ImageSource.camera);
-                    Navigator.pop(context);
                   },
-                  title: const Text("Camera"),
+                  title: const Text("Máy ảnh"),
                   leading: const Icon(
                     Icons.camera,
+                    color: kPrimaryColor,
+                  ),
+                ),
+                const Divider(height: 2, color: kPrimaryColor),
+                ListTile(
+                  onTap: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => FullPhoto(
+                                photoURL: Provider.of<UsersProvider>(context,
+                                        listen: false)
+                                    .getDataSharedPreferences('photoURL'))));
+                  },
+                  title: const Text("Ảnh đại diện"),
+                  leading: const Icon(
+                    Icons.photo,
                     color: kPrimaryColor,
                   ),
                 ),
@@ -143,7 +153,7 @@ class _ProfileState extends State<Profile> {
             ),
             StreamBuilder<QuerySnapshot>(
               stream: Provider.of<UsersProvider>(context, listen: false)
-                  .getCurrentName(),
+                  .getDataUser('id', widget.profileId),
               builder: (BuildContext context,
                   AsyncSnapshot<QuerySnapshot> snapshot) {
                 if (snapshot.hasData) {
@@ -169,21 +179,21 @@ class _ProfileState extends State<Profile> {
                 children: [
                   BuildButton(
                     isLast: false,
-                    text: 'Dark Mode',
+                    text: 'Chế độ tối',
                     icon: Icons.dark_mode,
                     backgroundColor: kContentColorLightTheme,
                     onTap: () {},
                   ),
                   BuildButton(
                     isLast: false,
-                    text: 'Active Status',
+                    text: 'Trạng thái hoạt động',
                     icon: Icons.toggle_on,
                     backgroundColor: kPrimaryColor,
                     onTap: () {},
                   ),
                   BuildButton(
                     isLast: false,
-                    text: 'Account Setting',
+                    text: 'Cài đặt tài khoản',
                     icon: Icons.manage_accounts,
                     backgroundColor: Colors.grey,
                     onTap: () {
@@ -195,14 +205,14 @@ class _ProfileState extends State<Profile> {
                   ),
                   BuildButton(
                     isLast: true,
-                    text: 'Sign Out',
+                    text: 'Đăng xuất',
                     icon: Icons.logout,
                     backgroundColor: Colors.blue,
                     onTap: () {
                       Provider.of<AuthProvider>(context, listen: false)
                           .signOut();
                       Provider.of<UsersProvider>(context, listen: false)
-                          .updateCurrentUser('isOnline', false);
+                          .updateDataCurrentUser('isOnline', false);
                       Navigator.pushNamedAndRemoveUntil(
                           context,
                           AuthScreen.routeName,
@@ -240,20 +250,16 @@ class BuildButton extends StatefulWidget {
 }
 
 class _BuildButtonState extends State<BuildButton> {
-  bool isSwitched = true;
-
-  void toggleSwitch(bool value) {
-    setState(() {
-      if (isSwitched == false) {
-        isSwitched = true;
-
-        print('Switch Button is ON');
-      } else {
-        isSwitched = false;
-
-        print('Switch Button is OFF');
-      }
-    });
+  void statusToggleSwitch(bool value) {
+    if (Provider.of<UsersProvider>(context, listen: false)
+            .getDataSharedPreferences('isOnline') ==
+        'true') {
+      Provider.of<UsersProvider>(context, listen: false)
+          .updateDataCurrentUser('isOnline', false);
+    } else {
+      Provider.of<UsersProvider>(context, listen: false)
+          .updateDataCurrentUser('isOnline', true);
+    }
   }
 
   @override
@@ -285,14 +291,27 @@ class _BuildButtonState extends State<BuildButton> {
                   Text(widget.text),
                 ],
               ),
-              if (widget.text == 'Active Status' || widget.text == 'Dark Mode')
-                Switch(
-                  value: isSwitched,
-                  activeColor: Colors.blue,
-                  activeTrackColor: Colors.yellow,
-                  inactiveThumbColor: Colors.redAccent,
-                  inactiveTrackColor: Colors.orange,
-                  onChanged: toggleSwitch,
+              if (widget.text == 'Trạng thái hoạt động')
+                StreamBuilder(
+                  stream: Provider.of<UsersProvider>(context, listen: false)
+                      .getDataUser(
+                          'id',
+                          Provider.of<UsersProvider>(context, listen: false)
+                              .getDataSharedPreferences('id')),
+                  builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+                    if (snapshot.hasData) {
+                      return Switch(
+                        value: snapshot.data!.docs[0]['isOnline'],
+                        activeColor: Colors.blue,
+                        activeTrackColor: Colors.yellow,
+                        inactiveThumbColor: Colors.redAccent,
+                        inactiveTrackColor: Colors.orange,
+                        onChanged: statusToggleSwitch,
+                      );
+                    } else {
+                      return const SizedBox.shrink();
+                    }
+                  },
                 )
             ],
           ),
