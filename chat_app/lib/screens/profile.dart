@@ -13,8 +13,11 @@ import 'update_profile.dart';
 
 class Profile extends StatefulWidget {
   static const routeName = 'profile';
-  const Profile({Key? key, required this.profileId}) : super(key: key);
+  const Profile(
+      {Key? key, required this.profileId, required this.usersProvider})
+      : super(key: key);
   final String profileId;
+  final UserProvider usersProvider;
   @override
   State<Profile> createState() => _ProfileState();
 }
@@ -31,18 +34,15 @@ class _ProfileState extends State<Profile> {
       });
       uploadFile(File(pickerFile.path));
       Navigator.pop(context);
-    } else {
-      print('no file picked');
     }
   }
 
   void uploadFile(File file) async {
-    UploadTask uploadTask = Provider.of<UsersProvider>(context, listen: false)
-        .uploadFile(file, 'avatar', widget.profileId);
+    UploadTask uploadTask =
+        widget.usersProvider.uploadFile(file, 'avatar', widget.profileId);
     TaskSnapshot snapshot = await uploadTask;
     final photoURL = await snapshot.ref.getDownloadURL();
-    Provider.of<UsersProvider>(context, listen: false)
-        .updateDataCurrentUser('photoURL', photoURL);
+    widget.usersProvider.updateDataCurrentUser('photoURL', photoURL);
   }
 
   Future<void> _showChoiceDialog(BuildContext context) {
@@ -86,8 +86,7 @@ class _ProfileState extends State<Profile> {
                         context,
                         MaterialPageRoute(
                             builder: (context) => FullPhoto(
-                                photoURL: Provider.of<UsersProvider>(context,
-                                        listen: false)
+                                photoURL: widget.usersProvider
                                     .getDataSharedPreferences('photoURL'))));
                   },
                   title: const Text("Ảnh đại diện"),
@@ -111,6 +110,7 @@ class _ProfileState extends State<Profile> {
         automaticallyImplyLeading: true,
         foregroundColor: Colors.black,
         backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: kDefaultPadding / 2),
@@ -134,12 +134,11 @@ class _ProfileState extends State<Profile> {
                             File(imageFile!.path),
                             fit: BoxFit.cover,
                           )
-                        : Provider.of<UsersProvider>(context, listen: false)
+                        : widget.usersProvider
                                     .getDataSharedPreferences('photoURL') !=
                                 ''
                             ? Image.network(
-                                Provider.of<UsersProvider>(context,
-                                        listen: false)
+                                widget.usersProvider
                                     .getDataSharedPreferences('photoURL'),
                                 fit: BoxFit.cover,
                               )
@@ -152,8 +151,7 @@ class _ProfileState extends State<Profile> {
               ),
             ),
             StreamBuilder<QuerySnapshot>(
-              stream: Provider.of<UsersProvider>(context, listen: false)
-                  .getDataUser('id', widget.profileId),
+              stream: widget.usersProvider.getUser('id', widget.profileId),
               builder: (BuildContext context,
                   AsyncSnapshot<QuerySnapshot> snapshot) {
                 if (snapshot.hasData) {
@@ -165,7 +163,7 @@ class _ProfileState extends State<Profile> {
                     ),
                   );
                 } else {
-                  return const Text('Error');
+                  return const SizedBox.shrink();
                 }
               },
             ),
@@ -178,32 +176,33 @@ class _ProfileState extends State<Profile> {
               child: Column(
                 children: [
                   BuildButton(
+                    usersProvider: widget.usersProvider,
                     isLast: false,
                     text: 'Chế độ tối',
                     icon: Icons.dark_mode,
                     backgroundColor: kContentColorLightTheme,
-                    onTap: () {},
                   ),
                   BuildButton(
+                    usersProvider: widget.usersProvider,
                     isLast: false,
                     text: 'Trạng thái hoạt động',
                     icon: Icons.toggle_on,
                     backgroundColor: kPrimaryColor,
-                    onTap: () {},
                   ),
                   BuildButton(
+                    usersProvider: widget.usersProvider,
                     isLast: false,
                     text: 'Cài đặt tài khoản',
-                    icon: Icons.manage_accounts,
+                    icon: Icons.build,
                     backgroundColor: Colors.grey,
                     onTap: () {
                       Navigator.pushNamed(context, UpdateProfile.routeName,
-                          arguments:
-                              Provider.of<UsersProvider>(context, listen: false)
-                                  .getDataSharedPreferences('userName'));
+                          arguments: widget.usersProvider
+                              .getDataSharedPreferences('userName'));
                     },
                   ),
                   BuildButton(
+                    usersProvider: widget.usersProvider,
                     isLast: true,
                     text: 'Đăng xuất',
                     icon: Icons.logout,
@@ -211,7 +210,7 @@ class _ProfileState extends State<Profile> {
                     onTap: () {
                       Provider.of<AuthProvider>(context, listen: false)
                           .signOut();
-                      Provider.of<UsersProvider>(context, listen: false)
+                      widget.usersProvider
                           .updateDataCurrentUser('isOnline', false);
                       Navigator.pushNamedAndRemoveUntil(
                           context,
@@ -229,16 +228,17 @@ class _ProfileState extends State<Profile> {
   }
 }
 
-class BuildButton extends StatefulWidget {
+class BuildButton extends StatelessWidget {
   const BuildButton({
     Key? key,
     required this.isLast,
     required this.text,
     required this.icon,
     required this.backgroundColor,
+    required this.usersProvider,
     this.onTap,
   }) : super(key: key);
-
+  final UserProvider usersProvider;
   final bool isLast;
   final String text;
   final IconData icon;
@@ -246,28 +246,11 @@ class BuildButton extends StatefulWidget {
   final void Function()? onTap;
 
   @override
-  State<BuildButton> createState() => _BuildButtonState();
-}
-
-class _BuildButtonState extends State<BuildButton> {
-  void statusToggleSwitch(bool value) {
-    if (Provider.of<UsersProvider>(context, listen: false)
-            .getDataSharedPreferences('isOnline') ==
-        'true') {
-      Provider.of<UsersProvider>(context, listen: false)
-          .updateDataCurrentUser('isOnline', false);
-    } else {
-      Provider.of<UsersProvider>(context, listen: false)
-          .updateDataCurrentUser('isOnline', true);
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
     return InkWell(
       highlightColor: Colors.transparent,
       splashFactory: NoSplash.splashFactory,
-      onTap: widget.onTap,
+      onTap: onTap,
       child: Column(
         children: [
           Row(
@@ -281,32 +264,35 @@ class _BuildButtonState extends State<BuildButton> {
                         vertical: kDefaultPadding / 2),
                     child: CircleAvatar(
                       child: Icon(
-                        widget.icon,
+                        icon,
                         color: kContentColorDarkTheme,
                       ),
                       radius: 18,
-                      backgroundColor: widget.backgroundColor,
+                      backgroundColor: backgroundColor,
                     ),
                   ),
-                  Text(widget.text),
+                  Text(text),
                 ],
               ),
-              if (widget.text == 'Trạng thái hoạt động')
+              if (text == 'Trạng thái hoạt động')
                 StreamBuilder(
-                  stream: Provider.of<UsersProvider>(context, listen: false)
-                      .getDataUser(
-                          'id',
-                          Provider.of<UsersProvider>(context, listen: false)
-                              .getDataSharedPreferences('id')),
+                  stream: usersProvider.getUser(
+                      'id', usersProvider.getDataSharedPreferences('id')),
                   builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
                     if (snapshot.hasData) {
                       return Switch(
                         value: snapshot.data!.docs[0]['isOnline'],
-                        activeColor: Colors.blue,
-                        activeTrackColor: Colors.yellow,
-                        inactiveThumbColor: Colors.redAccent,
-                        inactiveTrackColor: Colors.orange,
-                        onChanged: statusToggleSwitch,
+                        onChanged: (_) {
+                          if (usersProvider
+                                  .getDataSharedPreferences('isOnline') ==
+                              'true') {
+                            usersProvider.updateDataCurrentUser(
+                                'isOnline', false);
+                          } else {
+                            usersProvider.updateDataCurrentUser(
+                                'isOnline', true);
+                          }
+                        },
                       );
                     } else {
                       return const SizedBox.shrink();
@@ -315,7 +301,7 @@ class _BuildButtonState extends State<BuildButton> {
                 )
             ],
           ),
-          if (!widget.isLast)
+          if (!isLast)
             Container(
               margin: const EdgeInsets.only(left: 56),
               color: Colors.grey,

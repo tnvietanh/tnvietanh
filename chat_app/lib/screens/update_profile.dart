@@ -14,7 +14,6 @@ class _UpdateProfileState extends State<UpdateProfile> {
   final _updateNameKey = GlobalKey<FormState>();
   final Map<String, dynamic> _dataNeedUpdate = {
     'userName': '',
-    'photoURL': '',
   };
   @override
   void didChangeDependencies() {
@@ -27,7 +26,7 @@ class _UpdateProfileState extends State<UpdateProfile> {
 
   void _saveUpdate(data) {
     _updateNameKey.currentState?.save();
-    Provider.of<UsersProvider>(context, listen: false)
+    Provider.of<UserProvider>(context, listen: false)
         .updateDataCurrentUser('userName', data['userName']);
     Navigator.pop(context);
   }
@@ -37,13 +36,12 @@ class _UpdateProfileState extends State<UpdateProfile> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: false,
-        title: const Text('Setting'),
+        title: const Text('Cài đặt'),
         actions: [
           IconButton(
-            onPressed: () {
-              _saveUpdate(_dataNeedUpdate);
-            },
+            onPressed: () => _saveUpdate(_dataNeedUpdate),
             icon: const Icon(Icons.save),
+            tooltip: 'Lưu',
           ),
         ],
       ),
@@ -58,19 +56,10 @@ class _UpdateProfileState extends State<UpdateProfile> {
                   TextFormField(
                     initialValue: _dataNeedUpdate['userName'],
                     decoration: const InputDecoration(
-                      label: Text('Name'),
+                      label: Text('Tên'),
                     ),
                     onSaved: (value) {
                       _dataNeedUpdate['userName'] = value ?? '';
-                    },
-                  ),
-                  TextFormField(
-                    initialValue: _dataNeedUpdate['photoURL'],
-                    decoration: const InputDecoration(
-                      label: Text('Photo URL'),
-                    ),
-                    onSaved: (value) {
-                      _dataNeedUpdate['photoURL'] = value ?? '';
                     },
                   ),
                 ],

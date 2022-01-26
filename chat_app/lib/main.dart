@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider(prefs: prefs)),
-        ChangeNotifierProvider(create: (_) => UsersProvider(prefs: prefs)),
+        ChangeNotifierProvider(create: (_) => UserProvider(prefs: prefs)),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -38,7 +38,6 @@ class MyApp extends StatelessWidget {
           AuthScreen.routeName: (context) => const AuthScreen(),
           SearchScreen.routeName: (context) => const SearchScreen(),
           HomePage.routeName: (context) => const HomePage(),
-          // Profile.routeName: (context) => const Profile(),
           UpdateProfile.routeName: (context) => const UpdateProfile(),
         },
       ),

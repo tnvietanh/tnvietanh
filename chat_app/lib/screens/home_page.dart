@@ -1,3 +1,4 @@
+import 'package:chat_app/components/list_user.dart';
 import 'package:chat_app/components/user_avatar.dart';
 import 'package:chat_app/models/user.dart';
 import 'package:chat_app/provider/user_provider.dart';
@@ -32,15 +33,15 @@ class _HomePageState extends State<HomePage> {
       items: const [
         BottomNavigationBarItem(
           icon: Icon(Icons.messenger),
-          label: "Chats",
+          label: 'Chat',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.people),
-          label: "People",
+          label: 'Mọi người',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.call),
-          label: "Calls",
+          label: 'Cuộc gọi',
         ),
       ],
     );
@@ -48,27 +49,28 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final currentId = Provider.of<UsersProvider>(context, listen: false)
-        .getDataSharedPreferences('id');
+    final usersProvider = Provider.of<UserProvider>(context, listen: false);
+    final currentId = usersProvider.getDataSharedPreferences('id');
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: ClipOval(
-            child: SizedBox.fromSize(
-              size: const Size.fromRadius(20), // Image radius
-              child: UserAvatar(
-                  stream: Provider.of<UsersProvider>(context, listen: false)
-                      .getDataUser('id', currentId)),
-            ),
-          ),
+          icon: UserAvatar(
+              size: 20, stream: usersProvider.getUser('id', currentId)),
           onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => Profile(profileId: currentId),
+                builder: (context) => Profile(
+                  profileId: currentId,
+                  usersProvider: usersProvider,
+                ),
               )),
         ),
         automaticallyImplyLeading: false,
-        title: const Text("Chat"),
+        title: Text(_selectedIndex == 0
+            ? 'Chat'
+            : _selectedIndex == 1
+                ? 'Mọi người'
+                : 'Cuộc gọi'),
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
@@ -78,101 +80,28 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          _selectedIndex == 2
-              ? const Center(child: Text('...developing...'))
-              : _selectedIndex == 1 &&
-                      Provider.of<UsersProvider>(context, listen: false)
-                              .getDataSharedPreferences('isOnline') ==
-                          'false'
-                  ? Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: kDefaultPadding * 12,
-                          horizontal: kDefaultPadding * 2),
-                      child: Column(
-                        children: [
-                          const Text(
-                            'Xem những ai đang hoạt động',
-                            style: TextStyle(
-                                fontSize: 20, fontWeight: FontWeight.bold),
-                          ),
-                          const Text(
-                            'Cho mọi người biết khi bạn đang hoạt động, hoạt động gần đây hoặc có mặt trong cùng đoạn chat với họ. Bạn cũng sẽ biết khi họ như vậy.',
-                            style: TextStyle(fontSize: 16),
-                            textAlign: TextAlign.center,
-                          ),
-                          ElevatedButton(
-                              onPressed: () {
-                                Provider.of<UsersProvider>(context,
-                                        listen: false)
-                                    .updateDataCurrentUser('isOnline', true);
-                                setState(() {});
-                              },
-                              child: const Text('Bật'))
-                        ],
-                      ),
-                    )
-                  : Expanded(
-                      child: StreamBuilder<QuerySnapshot>(
-                        stream:
-                            Provider.of<UsersProvider>(context, listen: false)
-                                .getAllUser(),
-                        builder: (context,
-                            AsyncSnapshot<QuerySnapshot> userSnapshot) {
-                          if (userSnapshot.hasData) {
-                            final listUser = userSnapshot.data!.docs;
-                            return ListView.builder(
-                              itemCount: listUser.length,
-                              shrinkWrap: true,
-                              itemBuilder: (context, index) {
-                                if (_selectedIndex == 0) {
-                                  return StreamBuilder(
-                                    stream: Provider.of<UsersProvider>(context,
-                                            listen: false)
-                                        .getUserChattingWith(
-                                            listUser[index]['id']),
-                                    builder: (context,
-                                        AsyncSnapshot<QuerySnapshot>
-                                            chattingSnapshot) {
-                                      if (chattingSnapshot.hasData &&
-                                          chattingSnapshot
-                                              .data!.docs.isNotEmpty) {
-                                        return buildUser(
-                                          context,
-                                          listUser[index],
-                                          currentId,
-                                          _selectedIndex,
-                                        );
-                                      } else {
-                                        return const SizedBox.shrink();
-                                      }
-                                    },
-                                  );
-                                } else {
-                                  return buildUser(
-                                    context,
-                                    listUser[index],
-                                    currentId,
-                                    _selectedIndex,
-                                  );
-                                }
-                              },
-                            );
-                          } else {
-                            return const SizedBox.shrink();
-                          }
-                        },
-                      ),
-                    ),
-        ],
-      ),
+      body: _selectedIndex == 2
+          ? const Center(child: Text('Đang phát triển.'))
+          : Column(
+              children: [
+                _selectedIndex == 1
+                    ? CheckStatus(
+                        usersProvider: usersProvider,
+                        currentId: currentId,
+                        selectedIndex: _selectedIndex)
+                    : ListUser(
+                        usersProvider: usersProvider,
+                        selectedIndex: _selectedIndex,
+                        currentId: currentId)
+              ],
+            ),
       bottomNavigationBar: buildBottomNavigationBar(),
     );
   }
 }
 
 Widget buildUser(
+  UserProvider userProvider,
   BuildContext context,
   DocumentSnapshot? document,
   String currentId,
@@ -187,15 +116,20 @@ Widget buildUser(
     } else {
       return Container(
         padding: const EdgeInsets.only(
-            left: kDefaultPadding * 0.5,
-            right: kDefaultPadding * 0.5,
-            top: kDefaultPadding * 0.5),
+          left: kDefaultPadding / 2,
+          right: kDefaultPadding / 2,
+          top: kDefaultPadding / 2,
+        ),
         child: InkWell(
+          onLongPress: () {
+            userProvider.deleteChatRoom(userModel.id);
+          },
           onTap: () {
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => ChatRoom(
+                  userProvider: userProvider,
                   document: document,
                   currentId: currentId,
                 ),
@@ -206,15 +140,10 @@ Widget buildUser(
             children: [
               Stack(
                 children: [
-                  ClipOval(
-                    child: SizedBox.fromSize(
-                      size: const Size.fromRadius(20), // Image radius
-                      child: UserAvatar(
-                        stream:
-                            Provider.of<UsersProvider>(context, listen: false)
-                                .getDataUser('id', userModel.id),
-                      ),
-                    ),
+                  UserAvatar(
+                    size: 26,
+                    stream: Provider.of<UserProvider>(context, listen: false)
+                        .getUser('id', userModel.id),
                   ),
                   if (userModel.isOnline)
                     Positioned(
@@ -224,7 +153,7 @@ Widget buildUser(
                         height: 16,
                         width: 16,
                         decoration: BoxDecoration(
-                          color: kPrimaryColor,
+                          color: kSecondaryColor,
                           shape: BoxShape.circle,
                           border: Border.all(
                               color: Theme.of(context).scaffoldBackgroundColor,
@@ -269,13 +198,17 @@ Widget buildLastMessage(
 ) {
   return StreamBuilder<QuerySnapshot>(
     stream:
-        Provider.of<UsersProvider>(context, listen: false).getMessages(userId),
+        Provider.of<UserProvider>(context, listen: false).getMessages(userId),
     builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
       if (snapshot.hasData) {
         List<QueryDocumentSnapshot> listMessage = snapshot.data!.docs;
         if (listMessage.isNotEmpty) {
           if (listMessage.first['type'] == 'text') {
-            return Text(listMessage.first['message']);
+            return Text(
+              listMessage.first['message'],
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            );
           } else if (listMessage.first['idFrom'] == currentId) {
             return const Text('You sent a photo.');
           } else if (listMessage.first['idFrom'] == userId) {
@@ -291,4 +224,61 @@ Widget buildLastMessage(
       }
     },
   );
+}
+
+class CheckStatus extends StatelessWidget {
+  const CheckStatus(
+      {Key? key,
+      required this.usersProvider,
+      required this.currentId,
+      required this.selectedIndex})
+      : super(key: key);
+  final UserProvider usersProvider;
+  final String currentId;
+  final int selectedIndex;
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder(
+      stream: usersProvider.getUser('id', currentId),
+      builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+        if (snapshot.hasData &&
+            selectedIndex == 1 &&
+            snapshot.data!.docs[0]['isOnline'] == false) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(
+                vertical: kDefaultPadding * 12,
+                horizontal: kDefaultPadding * 2),
+            child: Column(
+              children: [
+                const Text(
+                  titleStatusOff,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Text(
+                  statusOffText,
+                  style: TextStyle(fontSize: 16),
+                  textAlign: TextAlign.center,
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    usersProvider.updateDataCurrentUser('isOnline', true);
+                  },
+                  child: const Text('Bật'),
+                )
+              ],
+            ),
+          );
+        } else {
+          return ListUser(
+            usersProvider: usersProvider,
+            selectedIndex: selectedIndex,
+            currentId: currentId,
+          );
+        }
+      },
+    );
+  }
 }

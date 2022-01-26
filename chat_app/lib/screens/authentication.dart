@@ -1,4 +1,5 @@
 import 'package:chat_app/provider/auth_provider.dart';
+import 'package:chat_app/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'home_page.dart';
@@ -18,10 +19,17 @@ class _AuthScreenState extends State<AuthScreen> {
   final _userNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _scrollController = ScrollController();
 
   bool _isObscure = true;
   final bool _isLoading = false;
   AuthMode _authMode = AuthMode.login;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
   void _switchAuthMode() {
     setState(() {
       if (_authMode == AuthMode.login) {
@@ -131,9 +139,10 @@ class _AuthScreenState extends State<AuthScreen> {
             _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : SingleChildScrollView(
+                    reverse: true,
+                    controller: _scrollController,
                     child: Column(
                       children: [
-                        SizedBox(height: deviceHeight * 0.03),
                         Text(
                           _authMode == AuthMode.login ? 'Login' : 'Sign Up',
                           style: const TextStyle(
@@ -142,12 +151,16 @@ class _AuthScreenState extends State<AuthScreen> {
                               fontSize: 50,
                               fontWeight: FontWeight.w900),
                         ),
-                        SizedBox(height: deviceHeight * 0.03),
-                        Image.asset(
-                          _authMode == AuthMode.login
-                              ? 'assets/images/login.png'
-                              : 'assets/images/signup.png',
+                        const SizedBox(height: kDefaultPadding),
+                        SizedBox(
+                          width: deviceWidth * 0.8,
+                          child: Image.asset(
+                            _authMode == AuthMode.login
+                                ? 'assets/images/login.png'
+                                : 'assets/images/signup.png',
+                          ),
                         ),
+                        const SizedBox(height: kDefaultPadding),
                         Form(
                           key: _formKey,
                           child: Column(
@@ -163,7 +176,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                   child: TextFormField(
                                     validator: (value) {
                                       if (value!.isEmpty || value.length < 2) {
-                                        return 'Please provide your name.';
+                                        return 'Tên không thể để trống.';
                                       } else {
                                         return null;
                                       }
@@ -173,12 +186,12 @@ class _AuthScreenState extends State<AuthScreen> {
                                         icon: Icon(Icons.person),
                                         hintStyle:
                                             TextStyle(color: Colors.grey),
-                                        hintText: "Your Name",
+                                        hintText: "Tên",
                                         focusedBorder: InputBorder.none,
                                         enabledBorder: InputBorder.none),
                                   ),
                                 ),
-                              SizedBox(height: deviceHeight * 0.02),
+                              const SizedBox(height: kDefaultPadding),
                               Container(
                                 width: deviceWidth * 0.8,
                                 padding: EdgeInsets.symmetric(
@@ -189,7 +202,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                 child: TextFormField(
                                   validator: (value) {
                                     if (value!.isEmpty) {
-                                      return 'Please provide your email.';
+                                      return 'Vui lòng cung cấp địa chỉ email.';
                                     } else {
                                       return null;
                                     }
@@ -204,7 +217,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                       enabledBorder: InputBorder.none),
                                 ),
                               ),
-                              SizedBox(height: deviceHeight * 0.02),
+                              const SizedBox(height: kDefaultPadding),
                               Container(
                                 width: deviceWidth * 0.8,
                                 padding: EdgeInsets.symmetric(
@@ -215,7 +228,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                 child: TextFormField(
                                   validator: (value) {
                                     if (value!.isEmpty || value.length < 5) {
-                                      return 'Please provide your password 5+.';
+                                      return 'Vui lòng nhập mật khẩu nhiều hơn 5 ký tự.';
                                     } else {
                                       return null;
                                     }
@@ -238,18 +251,20 @@ class _AuthScreenState extends State<AuthScreen> {
                                       ),
                                       hintStyle:
                                           const TextStyle(color: Colors.grey),
-                                      hintText: "Password",
+                                      hintText: "Mật khẩu",
                                       focusedBorder: InputBorder.none,
                                       enabledBorder: InputBorder.none),
                                 ),
                               ),
-                              SizedBox(height: deviceHeight * 0.02),
+                              const SizedBox(height: kDefaultPadding),
                             ],
                           ),
                         ),
                         ElevatedButton(
                           child: Text(
-                            _authMode == AuthMode.login ? 'Login' : 'Sign Up',
+                            _authMode == AuthMode.login
+                                ? 'Đăng nhập'
+                                : 'Đăng ký',
                           ),
                           style: ElevatedButton.styleFrom(
                             fixedSize:
@@ -267,16 +282,22 @@ class _AuthScreenState extends State<AuthScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(_authMode == AuthMode.login
-                                ? 'Don\'t have an Account? '
-                                : 'Already have an Account? '),
+                                ? 'Bạn chưa có tài khoản? '
+                                : 'Bạn đã có tài khoản? '),
                             TextButton(
                               onPressed: _switchAuthMode,
-                              child: Text(_authMode == AuthMode.login
-                                  ? 'Sign Up'
-                                  : 'Login'),
+                              child: Text(
+                                _authMode == AuthMode.login
+                                    ? 'Đăng ký'
+                                    : 'Đăng nhập',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
                           ],
-                        )
+                        ),
+                        const SizedBox(height: kDefaultPadding * 2),
                       ],
                     ),
                   ),

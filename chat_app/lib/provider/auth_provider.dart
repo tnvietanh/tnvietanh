@@ -57,7 +57,7 @@ class AuthProvider extends ChangeNotifier {
         await prefs.setString('id', firebaseUser.uid);
         await prefs.setString('userName', firebaseUser.displayName ?? '');
         await prefs.setString('photoURL', firebaseUser.photoURL ?? '');
-        await prefs.setString('isOnline', userModel['isOnline'].toString());
+        // await prefs.setString('isOnline', userModel['isOnline'].toString());
       } else {
         FirebaseFirestore.instance
             .collection('users')
@@ -69,7 +69,7 @@ class AuthProvider extends ChangeNotifier {
         await prefs.setString('id', userModel.id);
         await prefs.setString('userName', userModel.userName);
         await prefs.setString('photoURL', userModel.photoURL);
-        await prefs.setString('isOnline', userModel.isOnline.toString());
+        // await prefs.setString('isOnline', userModel.isOnline.toString());
       }
       _status = Status.authenticated;
       notifyListeners();
@@ -91,9 +91,9 @@ class AuthProvider extends ChangeNotifier {
       await user.updateDisplayName(name);
     } on FirebaseAuthException catch (e) {
       if (e.code == 'weak-password') {
-        print('The password provided is too weak.');
+        debugPrint('The password provided is too weak.');
       } else if (e.code == 'email-already-in-use') {
-        print('The account already exists for that email.');
+        debugPrint('The account already exists for that email.');
       }
     }
   }

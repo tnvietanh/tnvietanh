@@ -3,8 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'chat_room.dart';
-
 class SearchScreen extends StatefulWidget {
   static const routeName = 'search_screen';
   const SearchScreen({Key? key}) : super(key: key);
@@ -50,8 +48,8 @@ class _SearchScreenState extends State<SearchScreen> {
                     suffixIcon: IconButton(
                       icon: const Icon(Icons.search),
                       onPressed: () {
-                        Provider.of<UsersProvider>(context, listen: false)
-                            .getDataUser('userName', _searchController.text);
+                        Provider.of<UserProvider>(context, listen: false)
+                            .getUser('userName', _searchController.text);
                         setState(() {});
                       },
                     ),
@@ -62,8 +60,8 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
             StreamBuilder<QuerySnapshot>(
-                stream: Provider.of<UsersProvider>(context, listen: false)
-                    .getDataUser('userName', _searchController.text),
+                stream: Provider.of<UserProvider>(context, listen: false)
+                    .getUser('userName', _searchController.text),
                 builder:
                     (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
                   if (snapshot.hasData) {
@@ -77,18 +75,18 @@ class _SearchScreenState extends State<SearchScreen> {
                             Text(user[index]['userName']),
                             ElevatedButton(
                                 onPressed: () {
-                                  Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) => ChatRoom(
-                                                currentId: Provider.of<
-                                                            UsersProvider>(
-                                                        context,
-                                                        listen: false)
-                                                    .getDataSharedPreferences(
-                                                        'id'),
-                                                document: user[index],
-                                              )));
+                                  // Navigator.push(
+                                  //     context,
+                                  //     MaterialPageRoute(
+                                  //         builder: (context) => ChatRoom(
+                                  //               currentId: Provider.of<
+                                  //                           UserProvider>(
+                                  //                       context,
+                                  //                       listen: false)
+                                  //                   .getDataSharedPreferences(
+                                  //                       'id'),
+                                  //               document: user[index],
+                                  //             )));
                                 },
                                 child: const Text('Chat'))
                           ],

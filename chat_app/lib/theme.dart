@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 
-// This is our  main focus
-// Let's apply light and dark theme on our app
-// Now let's add dark theme on our app
+// const kPrimaryColor = Color(0xFF00BF6D);
+// const kSecondaryColor = Color(0xFFFE9901);
 
-const kPrimaryColor = Color(0xFF00BF6D);
-const kSecondaryColor = Color(0xFFFE9901);
+const kPrimaryColor = Color(0xFF00CC99);
+const kSecondaryColor = Color(0xFF00BF6D);
 const kContentColorLightTheme = Color(0xFF1D1D35);
 const kContentColorDarkTheme = Color(0xFFF5FCF9);
 const kWarningColor = Color(0xFFF3BB1C);
 const kErrorColor = Color(0xFFF03738);
-
 const kDefaultPadding = 20.0;
+const titleStatusOff = 'Xem những ai đang hoạt động';
+const statusOffText =
+    'Cho mọi người biết khi bạn đang hoạt động, hoạt động gần đây hoặc có mặt trong cùng đoạn chat với họ. Bạn cũng sẽ biết khi họ như vậy.';
 
 ThemeData lightThemeData(BuildContext context) {
   return ThemeData.light().copyWith(
@@ -59,4 +60,4 @@ ThemeData darkThemeData(BuildContext context) {
   );
 }
 
-const appBarTheme = AppBarTheme(centerTitle: true, elevation: 0);
+const appBarTheme = AppBarTheme(centerTitle: true);

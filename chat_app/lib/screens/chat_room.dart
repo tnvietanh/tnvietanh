@@ -17,11 +17,16 @@ enum MessageType { text, image }
 
 class ChatRoom extends StatefulWidget {
   static const routeName = 'chat_room';
-  const ChatRoom({Key? key, required this.document, required this.currentId})
+  const ChatRoom(
+      {Key? key,
+      required this.document,
+      required this.currentId,
+      required this.userProvider})
       : super(key: key);
 
   final DocumentSnapshot document;
   final String currentId;
+  final UserProvider userProvider;
 
   @override
   _ChatRoomState createState() => _ChatRoomState();
@@ -32,17 +37,24 @@ class _ChatRoomState extends State<ChatRoom> {
   final _scrollController = ScrollController();
   final _focusNode = FocusNode();
   late UserModel userModel;
+  late String chatRoomId;
+
   @override
   void initState() {
     super.initState();
     _focusNode.requestFocus();
     userModel = UserModel.fromDocument(widget.document);
+    if (widget.currentId.compareTo(userModel.id) > 0) {
+      chatRoomId = '${widget.currentId}-${userModel.id}';
+    } else {
+      chatRoomId = '${userModel.id}-${widget.currentId}';
+    }
   }
 
   void addMessage(messageText) {
     if (messageText.isNotEmpty) {
-      Provider.of<UsersProvider>(context, listen: false)
-          .addMessage(userModel.id, messageText, MessageType.text.name);
+      Provider.of<UserProvider>(context, listen: false).addMessage(
+          chatRoomId, userModel.id, messageText, MessageType.text.name);
       _messageEditingController.clear();
       _scrollDown();
     }
@@ -61,28 +73,20 @@ class _ChatRoomState extends State<ChatRoom> {
         await ImagePicker().pickImage(source: key, imageQuality: 25);
     if (pickerFile != null) {
       uploadFile(File(pickerFile.path));
-    } else {
-      print('no file picked');
     }
   }
 
   void uploadFile(File file) async {
-    final String chatRoomId;
-    if (widget.currentId.compareTo(userModel.id) > 0) {
-      chatRoomId = '${widget.currentId}-${userModel.id}';
-    } else {
-      chatRoomId = '${userModel.id}-${widget.currentId}';
-    }
     UploadTask uploadTask =
-        Provider.of<UsersProvider>(context, listen: false).uploadFile(
+        Provider.of<UserProvider>(context, listen: false).uploadFile(
       file,
       chatRoomId,
       DateTime.now().millisecondsSinceEpoch.toString(),
     );
     TaskSnapshot snapshot = await uploadTask;
     final photoURL = await snapshot.ref.getDownloadURL();
-    Provider.of<UsersProvider>(context, listen: false)
-        .addMessage(userModel.id, photoURL, MessageType.image.name);
+    Provider.of<UserProvider>(context, listen: false)
+        .addMessage(chatRoomId, userModel.id, photoURL, MessageType.image.name);
   }
 
   @override
@@ -90,31 +94,34 @@ class _ChatRoomState extends State<ChatRoom> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: false,
-        title: GestureDetector(
+        title: InkWell(
           onTap: () {
             Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) =>
-                        UserProfile(userDocument: widget.document)));
+                    builder: (context) => UserProfile(
+                          chatRoomId: chatRoomId,
+                          userDocument: widget.document,
+                          userProvider: widget.userProvider,
+                        )));
           },
           child: Row(
             children: [
-              ClipOval(
-                child: SizedBox.fromSize(
-                  size: const Size.fromRadius(20), // Image radius
-                  child: UserAvatar(
-                      stream: Provider.of<UsersProvider>(context, listen: false)
-                          .getDataUser('id', userModel.id)),
-                ),
-              ),
+              UserAvatar(
+                  size: 20,
+                  stream: Provider.of<UserProvider>(context, listen: false)
+                      .getUser('id', userModel.id)),
               const SizedBox(width: kDefaultPadding * 0.75),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    userModel.userName,
-                    style: const TextStyle(fontSize: 16),
+                  SizedBox(
+                    width: 142,
+                    child: Text(
+                      userModel.userName,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 16),
+                    ),
                   ),
                   const SizedBox(height: kDefaultPadding / 4),
                   userModel.isOnline
@@ -144,29 +151,27 @@ class _ChatRoomState extends State<ChatRoom> {
           children: [
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
-                stream: Provider.of<UsersProvider>(context, listen: false)
+                stream: Provider.of<UserProvider>(context, listen: false)
                     .getMessages(userModel.id),
                 builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-                  if (snapshot.hasData) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasData) {
                     final result = snapshot.data?.docs;
                     return ListView.builder(
-                        reverse: true,
-                        controller: _scrollController,
-                        itemCount: result!.length,
-                        itemBuilder: (context, index) {
-                          return Message(
-                            userId: userModel.id,
-                            message: result[index]["message"],
-                            type: result[index]['type'],
-                            sendByMe:
-                                result[index]["idFrom"] == widget.currentId,
-                          );
-                        });
-                  } else if (snapshot.connectionState ==
-                      ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  {
+                      reverse: true,
+                      controller: _scrollController,
+                      itemCount: result!.length,
+                      itemBuilder: (context, index) {
+                        return Message(
+                          userId: userModel.id,
+                          message: result[index]["message"],
+                          type: result[index]['type'],
+                          sendByMe: result[index]["idFrom"] == widget.currentId,
+                        );
+                      },
+                    );
+                  } else {
                     return const SizedBox.shrink();
                   }
                 },
@@ -191,6 +196,7 @@ class _ChatRoomState extends State<ChatRoom> {
                     },
                     color: kPrimaryColor,
                   ),
+                  const SizedBox(width: kDefaultPadding / 2),
                   IconButton(
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
@@ -200,6 +206,7 @@ class _ChatRoomState extends State<ChatRoom> {
                     },
                     color: kPrimaryColor,
                   ),
+                  const SizedBox(width: kDefaultPadding / 2),
                   IconButton(
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
@@ -207,6 +214,7 @@ class _ChatRoomState extends State<ChatRoom> {
                     color: kPrimaryColor,
                     onPressed: () {},
                   ),
+                  const SizedBox(width: kDefaultPadding / 2),
                   Expanded(
                     child: Container(
                       padding: const EdgeInsets.symmetric(
@@ -221,24 +229,23 @@ class _ChatRoomState extends State<ChatRoom> {
                           Expanded(
                             child: TextField(
                               focusNode: _focusNode,
-                              controller: _messageEditingController,
                               textInputAction: TextInputAction.unspecified,
+                              controller: _messageEditingController,
                               onSubmitted: (value) {
                                 addMessage(value);
                               },
-                              decoration: const InputDecoration(
-                                hintText: "Type message",
+                              decoration: InputDecoration(
+                                hintText: 'Aa',
                                 border: InputBorder.none,
+                                suffixIcon: IconButton(
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  icon: const Icon(Icons.send),
+                                  onPressed: () {},
+                                  color: kPrimaryColor,
+                                ),
                               ),
                             ),
-                          ),
-                          IconButton(
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
-                            icon: const Icon(
-                                Icons.sentiment_satisfied_alt_outlined),
-                            onPressed: () {},
-                            color: kPrimaryColor,
                           ),
                         ],
                       ),
@@ -277,19 +284,15 @@ class Message extends StatelessWidget {
         right: sendByMe ? kDefaultPadding / 2 : kDefaultPadding * 5,
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         mainAxisAlignment:
             sendByMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!sendByMe)
-            ClipOval(
-              child: SizedBox.fromSize(
-                size: const Size.fromRadius(12), // Image radius
-                child: UserAvatar(
-                  stream: Provider.of<UsersProvider>(context, listen: false)
-                      .getDataUser('id', userId),
-                ),
-              ),
+            UserAvatar(
+              size: 12,
+              stream: Provider.of<UserProvider>(context, listen: false)
+                  .getUser('id', userId),
             ),
           const SizedBox(width: kDefaultPadding / 2),
           type == MessageType.text.name
