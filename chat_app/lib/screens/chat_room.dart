@@ -277,6 +277,8 @@ class Message extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    var brightness = MediaQuery.of(context).platformBrightness;
+    bool isDarkMode = brightness == Brightness.dark;
     return Padding(
       padding: EdgeInsets.only(
         top: kDefaultPadding / 2,
@@ -309,16 +311,22 @@ class Message extends StatelessWidget {
                             topRight: Radius.circular(28),
                             bottomRight: Radius.circular(28),
                             bottomLeft: Radius.circular(8)),
-                    color: sendByMe
-                        ? kPrimaryColor
-                        : kPrimaryColor.withOpacity(0.2),
+                    color: isDarkMode
+                        ? sendByMe
+                            ? kPrimaryColor.withOpacity(0.2)
+                            : kContentColorLightTheme
+                        : sendByMe
+                            ? kPrimaryColor
+                            : kPrimaryColor.withOpacity(0.2),
                   ),
                   child: Text(message,
                       textAlign: TextAlign.start,
                       style: TextStyle(
-                        color: sendByMe
+                        color: isDarkMode
                             ? kContentColorDarkTheme
-                            : kContentColorLightTheme,
+                            : sendByMe
+                                ? kContentColorDarkTheme
+                                : kContentColorLightTheme,
                         fontSize: 16,
                       )))
               : GestureDetector(

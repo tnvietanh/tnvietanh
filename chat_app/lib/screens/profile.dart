@@ -18,6 +18,7 @@ class Profile extends StatefulWidget {
       : super(key: key);
   final String profileId;
   final UserProvider usersProvider;
+
   @override
   State<Profile> createState() => _ProfileState();
 }
@@ -105,10 +106,12 @@ class _ProfileState extends State<Profile> {
 
   @override
   Widget build(BuildContext context) {
+    var brightness = MediaQuery.of(context).platformBrightness;
+    bool isDarkMode = brightness == Brightness.dark;
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: true,
-        foregroundColor: Colors.black,
+        foregroundColor: isDarkMode ? Colors.white : Colors.black,
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -169,7 +172,8 @@ class _ProfileState extends State<Profile> {
             ),
             const SizedBox(height: kDefaultPadding),
             Card(
-              color: Colors.grey[100],
+              color:
+                  isDarkMode ? Colors.grey.withOpacity(0.2) : Colors.grey[100],
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15)),
               // color: kPrimaryColor,
@@ -181,6 +185,7 @@ class _ProfileState extends State<Profile> {
                     text: 'Chế độ tối',
                     icon: Icons.dark_mode,
                     backgroundColor: kContentColorLightTheme,
+                    onTap: () {},
                   ),
                   BuildButton(
                     usersProvider: widget.usersProvider,
@@ -247,6 +252,8 @@ class BuildButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    var brightness = MediaQuery.of(context).platformBrightness;
+    bool isDarkMode = brightness == Brightness.dark;
     return InkWell(
       highlightColor: Colors.transparent,
       splashFactory: NoSplash.splashFactory,
@@ -271,7 +278,12 @@ class BuildButton extends StatelessWidget {
                       backgroundColor: backgroundColor,
                     ),
                   ),
-                  Text(text),
+                  Text(
+                    text,
+                    style: isDarkMode
+                        ? const TextStyle(color: kContentColorDarkTheme)
+                        : const TextStyle(color: kContentColorLightTheme),
+                  ),
                 ],
               ),
               if (text == 'Trạng thái hoạt động')

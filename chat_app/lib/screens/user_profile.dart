@@ -23,11 +23,13 @@ class UserProfile extends StatefulWidget {
 class _UserProfileState extends State<UserProfile> {
   @override
   Widget build(BuildContext context) {
+    var brightness = MediaQuery.of(context).platformBrightness;
+    bool isDarkMode = brightness == Brightness.dark;
     UserModel userModel = UserModel.fromDocument(widget.userDocument);
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: true,
-        foregroundColor: Colors.black,
+        foregroundColor: isDarkMode ? Colors.white : Colors.black,
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -63,7 +65,9 @@ class _UserProfileState extends State<UserProfile> {
               ),
               const SizedBox(height: kDefaultPadding),
               Card(
-                color: Colors.grey[100],
+                color: isDarkMode
+                    ? Colors.grey.withOpacity(0.2)
+                    : Colors.grey[100],
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(15)),
                 // color: kPrimaryColor,
@@ -148,6 +152,8 @@ class BuildButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    var brightness = MediaQuery.of(context).platformBrightness;
+    bool isDarkMode = brightness == Brightness.dark;
     return InkWell(
       highlightColor: Colors.transparent,
       splashFactory: NoSplash.splashFactory,
@@ -172,7 +178,12 @@ class BuildButton extends StatelessWidget {
                       backgroundColor: backgroundColor,
                     ),
                   ),
-                  Text(text),
+                  Text(
+                    text,
+                    style: isDarkMode
+                        ? const TextStyle(color: kContentColorDarkTheme)
+                        : const TextStyle(color: kContentColorLightTheme),
+                  ),
                 ],
               ),
               if (text == 'Trạng thái hoạt động')

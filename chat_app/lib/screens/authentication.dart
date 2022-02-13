@@ -1,4 +1,5 @@
 import 'package:chat_app/provider/auth_provider.dart';
+import 'package:chat_app/screens/welcome.dart';
 import 'package:chat_app/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -116,11 +117,13 @@ class _AuthScreenState extends State<AuthScreen> {
 
   @override
   Widget build(BuildContext context) {
+    var brightness = MediaQuery.of(context).platformBrightness;
+    bool isDarkMode = brightness == Brightness.dark;
     final deviceWidth = MediaQuery.of(context).size.width;
     final deviceHeight = MediaQuery.of(context).size.height;
     return SafeArea(
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: isDarkMode ? Colors.black : Colors.white,
         body: Stack(
           fit: StackFit.expand,
           children: [
@@ -145,8 +148,10 @@ class _AuthScreenState extends State<AuthScreen> {
                       children: [
                         Text(
                           _authMode == AuthMode.login ? 'Login' : 'Sign Up',
-                          style: const TextStyle(
-                              color: Color(0xFF395B65),
+                          style: TextStyle(
+                              color: isDarkMode
+                                  ? kContentColorDarkTheme
+                                  : kContentColorLightTheme,
                               fontFamily: 'Rock3D',
                               fontSize: 50,
                               fontWeight: FontWeight.w900),
@@ -171,7 +176,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                   padding: EdgeInsets.symmetric(
                                       horizontal: deviceHeight * 0.03),
                                   decoration: BoxDecoration(
-                                      color: const Color(0xFFA8F5EE),
+                                      color: kPrimaryColor.withOpacity(0.2),
                                       borderRadius: BorderRadius.circular(32)),
                                   child: TextFormField(
                                     validator: (value) {
@@ -197,7 +202,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                 padding: EdgeInsets.symmetric(
                                     horizontal: deviceHeight * 0.03),
                                 decoration: BoxDecoration(
-                                    color: const Color(0xFFA8F5EE),
+                                    color: kPrimaryColor.withOpacity(0.2),
                                     borderRadius: BorderRadius.circular(32)),
                                 child: TextFormField(
                                   validator: (value) {
@@ -223,7 +228,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                 padding: EdgeInsets.symmetric(
                                     horizontal: deviceHeight * 0.03),
                                 decoration: BoxDecoration(
-                                    color: const Color(0xFFA8F5EE),
+                                    color: kPrimaryColor.withOpacity(0.2),
                                     borderRadius: BorderRadius.circular(32)),
                                 child: TextFormField(
                                   validator: (value) {

@@ -30,6 +30,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    var brightness = MediaQuery.of(context).platformBrightness;
+    bool isDarkMode = brightness == Brightness.dark;
     final deviceWidth = MediaQuery.of(context).size.width;
     final deviceHeight = MediaQuery.of(context).size.height;
     return SafeArea(
@@ -52,10 +54,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               padding: EdgeInsets.only(top: deviceHeight * 0.12),
               child: Column(
                 children: [
-                  const Text(
+                  Text(
                     'Chat App',
                     style: TextStyle(
-                        color: Color(0xFF395B65),
+                        color: isDarkMode ? Colors.white : Colors.black,
                         fontFamily: 'Rock3D',
                         fontSize: 50,
                         fontWeight: FontWeight.w900),

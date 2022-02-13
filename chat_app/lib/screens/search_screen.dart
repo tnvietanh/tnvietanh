@@ -1,7 +1,11 @@
+import 'package:chat_app/components/user_avatar.dart';
 import 'package:chat_app/provider/user_provider.dart';
+import 'package:chat_app/theme.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+import 'chat_room.dart';
 
 class SearchScreen extends StatefulWidget {
   static const routeName = 'search_screen';
@@ -22,6 +26,8 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    var brightness = MediaQuery.of(context).platformBrightness;
+    bool isDarkMode = brightness == Brightness.dark;
     final deviceWidth = MediaQuery.of(context).size.width;
     final deviceHeight = MediaQuery.of(context).size.height;
 
@@ -39,7 +45,7 @@ class _SearchScreenState extends State<SearchScreen> {
               width: deviceWidth * 0.8,
               padding: EdgeInsets.symmetric(horizontal: deviceHeight * 0.02),
               decoration: BoxDecoration(
-                  color: const Color(0xFFA8F5EE),
+                  color: isDarkMode ? Colors.grey : kPrimaryColor,
                   borderRadius: BorderRadius.circular(10)),
               child: TextFormField(
                 controller: _searchController,
@@ -53,52 +59,68 @@ class _SearchScreenState extends State<SearchScreen> {
                         setState(() {});
                       },
                     ),
-                    hintStyle: const TextStyle(color: Colors.grey),
+                    hintStyle: TextStyle(
+                        color:
+                            isDarkMode ? kContentColorLightTheme : Colors.grey),
                     hintText: "Search",
                     focusedBorder: InputBorder.none,
                     enabledBorder: InputBorder.none),
               ),
             ),
             StreamBuilder<QuerySnapshot>(
-                stream: Provider.of<UserProvider>(context, listen: false)
-                    .getUser('userName', _searchController.text),
-                builder:
-                    (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
-                  if (snapshot.hasData) {
-                    return ListView.separated(
+              stream: Provider.of<UserProvider>(context, listen: false)
+                  .getUser('userName', _searchController.text),
+              builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
+                if (snapshot.hasData) {
+                  return Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: ListView.separated(
                       shrinkWrap: true,
                       itemCount: snapshot.data.docs.length,
                       itemBuilder: (context, index) {
                         final user = snapshot.data.docs;
-                        return Row(
-                          children: [
-                            Text(user[index]['userName']),
-                            ElevatedButton(
-                                onPressed: () {
-                                  // Navigator.push(
-                                  //     context,
-                                  //     MaterialPageRoute(
-                                  //         builder: (context) => ChatRoom(
-                                  //               currentId: Provider.of<
-                                  //                           UserProvider>(
-                                  //                       context,
-                                  //                       listen: false)
-                                  //                   .getDataSharedPreferences(
-                                  //                       'id'),
-                                  //               document: user[index],
-                                  //             )));
-                                },
-                                child: const Text('Chat'))
-                          ],
+                        return InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ChatRoom(
+                                  userProvider: Provider.of<UserProvider>(
+                                      context,
+                                      listen: false),
+                                  document: user[index],
+                                  currentId: Provider.of<UserProvider>(context,
+                                          listen: false)
+                                      .getDataSharedPreferences('id'),
+                                ),
+                              ),
+                            );
+                          },
+                          child: Row(
+                            children: [
+                              UserAvatar(
+                                  stream: Provider.of<UserProvider>(context,
+                                          listen: false)
+                                      .getUser(
+                                          'userName', _searchController.text),
+                                  size: 26),
+                              Padding(
+                                padding: const EdgeInsets.only(left: 10),
+                                child: Text(user[index]['userName']),
+                              ),
+                            ],
+                          ),
                         );
                       },
                       separatorBuilder: (BuildContext context, int index) =>
                           const Divider(),
-                    );
-                  } else {
-                    return const SizedBox.shrink();
-                  }
-                })
+                    ),
+                  );
+                } else {
+                  return const SizedBox.shrink();
+                }
+              },
+            )
           ],
         ),
       ),
