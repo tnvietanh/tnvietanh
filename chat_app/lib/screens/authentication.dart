@@ -1,5 +1,4 @@
 import 'package:chat_app/provider/auth_provider.dart';
-import 'package:chat_app/screens/welcome.dart';
 import 'package:chat_app/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

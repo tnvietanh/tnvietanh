@@ -36,57 +36,59 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     final deviceHeight = MediaQuery.of(context).size.height;
     return SafeArea(
       child: Scaffold(
-        body: Stack(
-          children: [
-            Positioned(
-              width: deviceWidth * 0.8,
-              top: 0,
-              left: 0,
-              child: Image.asset('assets/images/top.png'),
-            ),
-            Positioned(
-              width: deviceWidth * 0.8,
-              bottom: 0,
-              right: 0,
-              child: Image.asset('assets/images/bottom.png'),
-            ),
-            Padding(
-              padding: EdgeInsets.only(top: deviceHeight * 0.12),
-              child: Column(
-                children: [
-                  Text(
-                    'Chat App',
-                    style: TextStyle(
-                        color: isDarkMode ? Colors.white : Colors.black,
-                        fontFamily: 'Rock3D',
-                        fontSize: 50,
-                        fontWeight: FontWeight.w900),
-                  ),
-                  SizedBox(height: deviceHeight * 0.03),
-                  Image.asset(
-                    'assets/images/chat_app.png',
-                    width: deviceWidth,
-                  ),
-                  SizedBox(height: deviceHeight * 0.03),
-                  ElevatedButton(
-                    child: const Text(
-                      'Start Messaging',
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      fixedSize: Size(deviceWidth * 0.6, deviceHeight * 0.06),
-                      primary: const Color(0xFF395B65),
-                      onPrimary: Colors.white,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
-                    ),
-                    onPressed: () {
-                      Navigator.pushNamed(context, AuthScreen.routeName);
-                    },
-                  ),
-                ],
+        body: SingleChildScrollView(
+          child: Stack(
+            children: [
+              Positioned(
+                width: deviceWidth * 0.8,
+                top: 0,
+                left: 0,
+                child: Image.asset('assets/images/top.png'),
               ),
-            ),
-          ],
+              Positioned(
+                width: deviceWidth * 0.8,
+                bottom: 0,
+                right: 0,
+                child: Image.asset('assets/images/bottom.png'),
+              ),
+              Padding(
+                padding: EdgeInsets.only(top: deviceHeight * 0.12),
+                child: Column(
+                  children: [
+                    Text(
+                      'Chat App',
+                      style: TextStyle(
+                          color: isDarkMode ? Colors.white : Colors.black,
+                          fontFamily: 'Rock3D',
+                          fontSize: 50,
+                          fontWeight: FontWeight.w900),
+                    ),
+                    SizedBox(height: deviceHeight * 0.03),
+                    Image.asset(
+                      'assets/images/chat_app.png',
+                      width: deviceWidth,
+                    ),
+                    SizedBox(height: deviceHeight * 0.03),
+                    ElevatedButton(
+                      child: const Text(
+                        'Start Messaging',
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        fixedSize: Size(deviceWidth * 0.6, deviceHeight * 0.06),
+                        primary: const Color(0xFF395B65),
+                        onPrimary: Colors.white,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: () {
+                        Navigator.pushNamed(context, AuthScreen.routeName);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
