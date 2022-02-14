@@ -13,11 +13,3 @@ Real-time chat/messaging application
     <li>Display Online/Offline</li>
     <li>Dark Mode</li>
 </ul>
-
-
-
-
-
-
-
-
