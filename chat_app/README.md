@@ -12,4 +12,8 @@ Real-time chat/messaging application
     <li>List conversation</li>
     <li>Display Online/Offline</li>
     <li>Dark Mode</li>
+<<<<<<< HEAD
 </ul>
+=======
+</ul>
+>>>>>>> 516545df31a4cc2aa48b24a4e289ddfd3dd5dd8a

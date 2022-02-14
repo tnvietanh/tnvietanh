@@ -2,7 +2,6 @@
 Product management application for shop
 
 # <a href="https://youtu.be/RLCd8Asgs-E">Watch it on Youtube</a>
-
 # Features 
 <ul>
     <li>List products</li>
