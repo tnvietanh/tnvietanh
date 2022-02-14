@@ -2,7 +2,7 @@
 Real-time chat application
 
 # Features
-Send text message
+Send text message<br>
 Send images
 Update profile
 Search user to make conversation
