@@ -14,13 +14,14 @@ import 'screens/welcome.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
-      options: const FirebaseOptions(
-          apiKey: "AIzaSyDTGs9mzFLXM6j24dRkhQxKKGy5PWhkhv8",
-          authDomain: "chat-app-200f0.firebaseapp.com",
-          projectId: "chat-app-200f0",
-          storageBucket: "chat-app-200f0.appspot.com",
-          messagingSenderId: "767446320674",
-          appId: "1:767446320674:web:9a27bfeed463ee9e38ac7b"));
+      // options: const FirebaseOptions(
+      //     apiKey: "AIzaSyDTGs9mzFLXM6j24dRkhQxKKGy5PWhkhv8",
+      //     authDomain: "chat-app-200f0.firebaseapp.com",
+      //     projectId: "chat-app-200f0",
+      //     storageBucket: "chat-app-200f0.appspot.com",
+      //     messagingSenderId: "767446320674",
+      //     appId: "1:767446320674:web:9a27bfeed463ee9e38ac7b"),
+      );
   SharedPreferences prefs = await SharedPreferences.getInstance();
   runApp(MyApp(prefs: prefs));
 }

@@ -17,7 +17,7 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
     try {
       final url =
-          'https://www.googleapis.com/identitytoolkit/v3/relyingparty/$urlSegment?key=AIzaSyDS4N17zeJBtu0axlJ-e83hgo-B2qwnXuA';
+          'https://www.googleapis.com/identitytoolkit/v3/relyingparty/$urlSegment?key=AIzaSyAF4EnKXLDlOUO9LdemX-7VgqgjjDUMyeM';
       final body = json.encode(
         {
           'email': email,
